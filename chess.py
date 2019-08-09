@@ -30,7 +30,8 @@ def calcAllPositions(piece):
 		positionsList.append((position[0] - 2, position[1] - 1))
 
 	#remove any out of bounds positions
-	positionsList = list(filter(lambda tup: tup[0] >= 0 and tup[1] >= 0,positionsList))
+	positionsList = list(filter(lambda tup: (tup[0] < 8 and tup[0] >= 0) 
+										and (tup[1] < 8 and tup[1] >= 0),positionsList))
 
 	invalidPosList = []
 
@@ -75,14 +76,24 @@ def drawBoard():
 		print('-'*27)
 	print("   |A |B |C |D |E |F |G |H ")
 
-testPiece = Piece("KNIGHT","WHITE",(3,3),[])
-board[3][3] = testPiece
+def initBoard():
+	#pawns
+	for i in range(8):
+		board[i][1] = Piece("PAWN","BLACK",(i,1),[])
+		board[i][6] = Piece("PAWN","WHITE",(i,6),[])
 
-testPiece = Piece("KNIGHT","BLACK",(4,5),[])
-board[4][5] = testPiece
+	for rank,i in zip(["ROOK","KNIGHT","BISHOP"], range(3)):
+		board[i][0] = Piece(rank,"BLACK",(i,0),[])
+		board[i][7] = Piece(rank,"WHITE",(i,7),[])
 
-board[3][3].possibleMoves = calcAllPositions(board[3][3])
-board[4][5].possibleMoves = calcAllPositions(board[4][5])
+	for rank,i in zip(["BISHOP","KNIGHT","ROOK"], range(5,8)):
+		board[i][0] = Piece(rank,"BLACK",(i,0),[])
+		board[i][7] = Piece(rank,"WHITE",(i,7),[])
+
+	for side,i in zip(["BLACK","WHITE"], [0,7]):
+		board[3][i] = Piece("kING",side,(3,i),[])		
+		board[4][i] = Piece("QUEEN",side,(4,i),[])		
+
 
 alphabet = "ABCDEFGH"
 coordDict = {alphabet[i] : i for i in list(range(8))}
@@ -95,14 +106,16 @@ def anToMat(coords):
 
 
 def main():
+	initBoard()
 	currentPlayer = "WHITE"
 	drawBoard()
 	while(True):
 			playerInput = input("Enter move...\n")
 			piece = anToMat(str(playerInput).split(' ')[0])
 			target = anToMat(str(playerInput).split(' ')[1])
-			move(board[piece[0]][piece[1]], target, "WHITE")
-			drawBoard()
+			move(board[piece[0]][piece[1]], target, currentPlayer)
+			currentPlayer = "WHITE" if currentPlayer == "BLACK" else "BLACK"
+			drawBoard() 
 
 	#move(piece, target, currentPlayer)
 	#determineCheck()
