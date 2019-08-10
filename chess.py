@@ -5,6 +5,10 @@ class Piece:
 		self.position = position
 		self.possibleMoves = possibleMoves
 
+
+whiteSide = []
+blackSide = []
+
 board = []
 for i in range(8):
 	row = []
@@ -28,6 +32,17 @@ def calcAllPositions(piece):
 		positionsList.append((position[0] - 2, position[1] + 1))
 		positionsList.append((position[0] + 2, position[1] - 1))
 		positionsList.append((position[0] - 2, position[1] - 1))
+
+	elif rank == "PAWN":
+		if piece.player == "WHITE":
+				diagLeft = board[position[0] - 1][position[1] - 1].piece
+				diagRight = board[position[0] - 1][position[1] + 1].piece
+
+				positionsList.append((position[0] - 1, position[1]))
+				positionsList.append((position[0] - 2, position[1]))
+		else:
+				positionsList.append((position[0] + 1, position[1]))
+				positionsList.append((position[0] + 2, position[1]))
 
 	#remove any out of bounds positions
 	positionsList = list(filter(lambda tup: (tup[0] < 8 and tup[0] >= 0) 
@@ -58,9 +73,10 @@ def move(piece, target, player):
 		piece.position = target
 		board[target[0]][target[1]] = piece
 		print(player + " MOVES " + piece.rank + " TO " + str(target))
+		return True
 	else:
 		print("INVALID MOVE")
-		return
+		return False
 
 def drawBoard():
 	print('#'*24)
@@ -80,20 +96,36 @@ def initBoard():
 	#pawns
 	for i in range(8):
 		board[i][1] = Piece("PAWN","BLACK",(i,1),[])
+		blackSide.append(board[i][1])
+
 		board[i][6] = Piece("PAWN","WHITE",(i,6),[])
+		whiteSide.append(board[i][6])
 
 	for rank,i in zip(["ROOK","KNIGHT","BISHOP"], range(3)):
 		board[i][0] = Piece(rank,"BLACK",(i,0),[])
+		blackSide.append(board[i][0])
+
 		board[i][7] = Piece(rank,"WHITE",(i,7),[])
+		whiteSide.append(board[i][7])
 
 	for rank,i in zip(["BISHOP","KNIGHT","ROOK"], range(5,8)):
 		board[i][0] = Piece(rank,"BLACK",(i,0),[])
+		blackSide.append(board[i][0])
+
 		board[i][7] = Piece(rank,"WHITE",(i,7),[])
+		whiteSide.append(board[i][7])
 
 	for side,i in zip(["BLACK","WHITE"], [0,7]):
 		board[3][i] = Piece("kING",side,(3,i),[])		
 		board[4][i] = Piece("QUEEN",side,(4,i),[])		
 
+		if side == "WHITE":
+			whiteSide.append(board[3][i])
+			whiteSide.append(board[4][i])
+
+		if side == "BLACK":
+			blackSide.append(board[3][i])
+			blackSide.append(board[4][i])
 
 alphabet = "ABCDEFGH"
 coordDict = {alphabet[i] : i for i in list(range(8))}
@@ -104,20 +136,43 @@ def anToMat(coords):
 
 	return (xcoord,ycoord)
 
+def determineCheck():
+	for side in ["WHITE","BLACK"]:
+		if side == "WHITE":
+			king = list(filter( (lambda p : p.rank == "kING"), whiteSide))[0]
+			for piece in blackSide:
+				if king.position in piece.possibleMoves:
+					return True
+				else:
+					return False
+
+		if side == "BLACK":
+			king = list(filter( (lambda p : p.rank == "kING") ,blackSide))[0]
+			for piece in whiteSide:
+				if king.position in piece.possibleMoves:
+					return True
+				else:
+					return False
 
 def main():
 	initBoard()
 	currentPlayer = "WHITE"
 	drawBoard()
-	while(True):
+
+	play = True
+	while(play):
+			print("CURRENT PLAYER: " + currentPlayer)
 			playerInput = input("Enter move...\n")
 			piece = anToMat(str(playerInput).split(' ')[0])
 			target = anToMat(str(playerInput).split(' ')[1])
-			move(board[piece[0]][piece[1]], target, currentPlayer)
-			currentPlayer = "WHITE" if currentPlayer == "BLACK" else "BLACK"
+
+			playerMove = move(board[piece[0]][piece[1]], target, currentPlayer)
+			if playerMove:	
+					currentPlayer = "WHITE" if currentPlayer == "BLACK" else "BLACK"
+
+			play = not determineCheck()
 			drawBoard() 
 
-	#move(piece, target, currentPlayer)
 	#determineCheck()
 	#determineCheckmate()
 	#currentPlayer = not currentPlayer
