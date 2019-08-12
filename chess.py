@@ -35,12 +35,28 @@ def calcAllPositions(piece):
 
 	elif rank == "PAWN":
 		if piece.player == "WHITE":
-				diagLeft = board[position[0] - 1][position[1] - 1].piece
-				diagRight = board[position[0] - 1][position[1] + 1].piece
+			if position[0] > 
+					diagLeft = board[position[0] - 1][position[1] - 1]
+					diagRight = board[position[0] - 1][position[1] + 1]
+
+					if diagLeft.player == "BLACK":
+						positionsList.append((position[0] - 1, position[1] -1))
+					
+					if diagRight.player == "BLACK":
+						positionsList.append((position[0] - 1, position[1] + 1))
 
 				positionsList.append((position[0] - 1, position[1]))
 				positionsList.append((position[0] - 2, position[1]))
 		else:
+				diagLeft = board[position[0] + 1][position[1] - 1]
+				diagRight = board[position[0] + 1][position[1] + 1]
+
+				if diagLeft.player == "WHITE":
+					positionsList.append((position[0] + 1, position[1] -1))
+					
+				if diagRight.player == "WHITE":
+					positionsList.append((position[0] + 1, position[1] + 1))
+
 				positionsList.append((position[0] + 1, position[1]))
 				positionsList.append((position[0] + 2, position[1]))
 
@@ -68,6 +84,7 @@ def validMove(piece, target, player):
 		return False
 
 def move(piece, target, player):
+	print(piece.possibleMoves)
 	if validMove(piece, target, player):
 		board[piece.position[0]][piece.position[1]] = Piece("EMPTY","NONE",piece.position,[])
 		piece.position = target
@@ -126,6 +143,10 @@ def initBoard():
 		if side == "BLACK":
 			blackSide.append(board[3][i])
 			blackSide.append(board[4][i])
+
+	for i in range(8):
+		for j in range(8):
+				board[i][j].possibleMoves = calcAllPositions(board[i][j])
 
 alphabet = "ABCDEFGH"
 coordDict = {alphabet[i] : i for i in list(range(8))}
