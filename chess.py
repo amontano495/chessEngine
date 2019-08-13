@@ -16,6 +16,12 @@ for i in range(8):
 		row.append(Piece("EMPTY","NONE",(i,j),[]))
 	board.append(row)
 
+def outOfBounds(position):
+	if (position[0] >= 0 and position[0] <= 7) and
+		(position[1] >= 0 and position[1] <= 7):
+		return True
+	return False
+
 def calcAllPositions(piece):
 	rank = piece.rank
 	position = piece.position
@@ -35,6 +41,10 @@ def calcAllPositions(piece):
 
 	elif rank == "PAWN":
 		if piece.player == "WHITE":
+			diagLeft = ( position[0] - 1, position[1] - 1 )
+			diagRight = ( position[0] - 1, position[1] + 1 )
+			
+
 			if position[0] > 
 					diagLeft = board[position[0] - 1][position[1] - 1]
 					diagRight = board[position[0] - 1][position[1] + 1]
