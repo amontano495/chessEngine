@@ -19,8 +19,8 @@ for i in range(8):
 def outOfBounds(position):
 	if (position[0] >= 0 and position[0] <= 7) and
 		(position[1] >= 0 and position[1] <= 7):
-		return True
-	return False
+		return False
+	return True
 
 def calcAllPositions(piece):
 	rank = piece.rank
@@ -43,20 +43,15 @@ def calcAllPositions(piece):
 		if piece.player == "WHITE":
 			diagLeft = ( position[0] - 1, position[1] - 1 )
 			diagRight = ( position[0] - 1, position[1] + 1 )
-			
 
-			if position[0] > 
-					diagLeft = board[position[0] - 1][position[1] - 1]
-					diagRight = board[position[0] - 1][position[1] + 1]
+			for square in [diagLeft,diagRight]:
+				if not oufOfBounds(square):
+					 adjacentPiece = board[square[0]][square[1]]
+						if adjacentPiece.player == "BLACK":
+							positionsList.append(square)
 
-					if diagLeft.player == "BLACK":
-						positionsList.append((position[0] - 1, position[1] -1))
-					
-					if diagRight.player == "BLACK":
-						positionsList.append((position[0] - 1, position[1] + 1))
-
-				positionsList.append((position[0] - 1, position[1]))
-				positionsList.append((position[0] - 2, position[1]))
+			positionsList.append((position[0] - 1, position[1]))
+			positionsList.append((position[0] - 2, position[1]))
 		else:
 				diagLeft = board[position[0] + 1][position[1] - 1]
 				diagRight = board[position[0] + 1][position[1] + 1]
