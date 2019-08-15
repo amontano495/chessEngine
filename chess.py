@@ -17,10 +17,15 @@ for i in range(8):
 	board.append(row)
 
 def outOfBounds(position):
-	if (position[0] >= 0 and position[0] <= 7) and
-		(position[1] >= 0 and position[1] <= 7):
+	if (position[0] >= 0 and position[0] <= 7) and (position[1] >= 0 and position[1] <= 7):
 		return False
 	return True
+
+def enemySide(player):
+	if player == "WHITE":
+		return "BLACK"
+	else:
+		return "WHITE"
 
 def calcAllPositions(piece):
 	rank = piece.rank
@@ -40,30 +45,19 @@ def calcAllPositions(piece):
 		positionsList.append((position[0] - 2, position[1] - 1))
 
 	elif rank == "PAWN":
-		if piece.player == "WHITE":
-			diagLeft = ( position[0] - 1, position[1] - 1 )
-			diagRight = ( position[0] - 1, position[1] + 1 )
+		for side,direction in zip(["WHITE","BLACK"],[-1,1]):
+			diagLeft = ( position[0] - 1, position[1] + direction )
+			diagRight = ( position[0] + 1, position[1] + direction)
 
 			for square in [diagLeft,diagRight]:
-				if not oufOfBounds(square):
-					 adjacentPiece = board[square[0]][square[1]]
-						if adjacentPiece.player == "BLACK":
-							positionsList.append(square)
+				if not outOfBounds(square):
+					adjacentPiece = board[square[0]][square[1]]
 
-			positionsList.append((position[0] - 1, position[1]))
-			positionsList.append((position[0] - 2, position[1]))
-		else:
-				diagLeft = board[position[0] + 1][position[1] - 1]
-				diagRight = board[position[0] + 1][position[1] + 1]
+					if adjacentPiece.player == enemySide(piece.player):
+						positionsList.append(square)
 
-				if diagLeft.player == "WHITE":
-					positionsList.append((position[0] + 1, position[1] -1))
-					
-				if diagRight.player == "WHITE":
-					positionsList.append((position[0] + 1, position[1] + 1))
-
-				positionsList.append((position[0] + 1, position[1]))
-				positionsList.append((position[0] + 2, position[1]))
+			positionsList.append((position[0] , position[1] + direction))
+			positionsList.append((position[0] , position[1] + direction*2))
 
 	#remove any out of bounds positions
 	positionsList = list(filter(lambda tup: (tup[0] < 8 and tup[0] >= 0) 
