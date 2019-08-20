@@ -205,6 +205,12 @@ def anToMat(coords):
 
 	return (xcoord,ycoord)
 
+def getKing(side):
+	for i in range(8):
+		for j in range(8):
+			if board[i][j].rank == "kING" and board[i][j].player == side:
+				return board[i][j]
+
 def determineCheck():
 	for side in ["WHITE","BLACK"]:
 		if side == "WHITE":
@@ -223,6 +229,26 @@ def determineCheck():
 				else:
 					return False
 
+def determineCheckmate():
+	pieceVector = [piece for row in board for piece in row]
+	for side in ["WHITE","BLACK"]:
+		king = getKing(side)
+		enemyPieces = [piece for piece in pieceVector if piece.player == enemySide(side)]
+
+		allPossibleEnemyMoves = []
+		for piece in enemyPieces:
+			allPossibleEnemyMoves.append(piece.possibleMoves)
+
+		kingMoveset = set(king.possibleMoves)
+		enemyMoveset = set(allPossibleEnemyMoves)
+
+		if kingMoveset.issubset(enemyMoveset):
+			return True
+
+	return False	
+		
+		
+
 def main():
 	initBoard()
 	currentPlayer = "WHITE"
@@ -239,7 +265,10 @@ def main():
 			if playerMove:	
 					currentPlayer = "WHITE" if currentPlayer == "BLACK" else "BLACK"
 
-			play = not determineCheck()
+			if(determineCheckmate()):
+				print("CHECKMATE!")
+				play = False
+			#play = not determineCheck()
 			drawBoard() 
 
 	#determineCheck()
