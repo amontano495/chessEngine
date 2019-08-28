@@ -289,21 +289,30 @@ def determineCheckmate():
 		
 		
 def main():
+	#setup board
 	initBoard()
+	#set current player
 	currentPlayer = "WHITE"
+	#show player board
 	drawBoard()
 
 	play = True
 	while(play):
 			print("CURRENT PLAYER: " + currentPlayer)
+			#get move from player
 			playerInput = input("Enter move...\n")
+			#piece player wants to move
 			piece = anToMat(str(playerInput).split(' ')[0])
+			#space player wants to move to
 			target = anToMat(str(playerInput).split(' ')[1])
 
+			#check if move is acceptable, then switch players
 			playerMove = move(board[piece[0]][piece[1]], target, currentPlayer)
 			if playerMove:	
 					currentPlayer = "WHITE" if currentPlayer == "BLACK" else "BLACK"
 
+			
+			#check if game is in checkmate
 			if(determineCheckmate()):
 				print("CHECKMATE!")
 				play = False
