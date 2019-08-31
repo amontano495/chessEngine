@@ -77,6 +77,18 @@ def calcAllPositions(piece):
 			positionsList.append((position[0] , position[1] + direction))
 			positionsList.append((position[0] , position[1] + direction*2))
 
+	#if piece is a king
+	elif rank == "kING":
+		topleft = ( position[0]  - 1, position[1] - 1 )
+		botright = ( position[0]  + 1, position[1] + 1 )
+
+		for i in range(topleft[0], botright[0]):
+			for j in range(topleft[1], botright[1]):
+				if (i,j) == position or board[i][j].player == piece.player or outOfBounds( (i,j) ):
+					continue
+				print((i,j))
+				positionsList.append( (i,j) )
+
 	#if piece is a queen
 	elif rank == "QUEEN":
 		#queen can move any direction, limitless
@@ -235,6 +247,11 @@ def initBoard():
 alphabet = "ABCDEFGH"
 coordDict = {alphabet[i] : i for i in list(range(8))}
 
+def updatePieceMoves():
+	for i in range(8):
+		for j in range(8):
+				board[i][j].possibleMoves = calcAllPositions(board[i][j])
+
 #converts algebraic notation to numeric tuples
 def anToMat(coords):
 	xcoord = int(coordDict[coords[0]])
@@ -279,10 +296,17 @@ def determineCheckmate():
 		for piece in enemyPieces:
 			allPossibleEnemyMoves.append(piece.possibleMoves)
 
-		kingMoveset = set(king.possibleMoves)
-		enemyMoveset = set(allPossibleEnemyMoves)
 
-		if kingMoveset.issubset(enemyMoveset):
+		print(side)
+		print("KING MOVES")
+		kingMoveset = set(king.possibleMoves)
+		print(kingMoveset)
+
+		print("ENEMY MOVES")
+		enemyMoveset = set([move for sub in allPossibleEnemyMoves for move in sub])
+		print(enemyMoveset)
+
+		if kingMoveset.issubset(enemyMoveset) and kingMoveset != set():
 			return True
 
 	return False	
@@ -310,6 +334,7 @@ def main():
 			playerMove = move(board[piece[0]][piece[1]], target, currentPlayer)
 			if playerMove:	
 					currentPlayer = "WHITE" if currentPlayer == "BLACK" else "BLACK"
+					updatePieceMoves()
 
 			
 			#check if game is in checkmate
