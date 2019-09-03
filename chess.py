@@ -141,6 +141,61 @@ def calcAllPositions(piece):
 			square = ( square[0]  - 1, square[1] + 1)
 			positionsList.append( (square[0], square[1]) )
 
+	#if piece is a rook
+	elif rank == "ROOK":
+
+		square = position
+		#up
+		while(not outOfBounds(square) ):
+			square = ( square[0] , square[1] - 1)
+			positionsList.append( (square[0], square[1]) )
+
+		square = position
+		#down
+		while(not outOfBounds(square) ):
+			square = ( square[0] , square[1] + 1)
+			positionsList.append( (square[0], square[1]) )
+
+		square = position
+		#left
+		while(not outOfBounds(square) ):
+			square = ( square[0]  - 1, square[1] )
+			positionsList.append( (square[0], square[1]) )
+		
+		square = position
+		#right
+		while(not outOfBounds(square) ):
+			square = ( square[0]  + 1, square[1] )
+			positionsList.append( (square[0], square[1]) )
+
+	#if piece is a bishop
+	elif rank == "BISHOP":
+
+		square = position
+		#upRight
+		while(not outOfBounds(square) ):
+			square = ( square[0]  + 1, square[1] - 1)
+			positionsList.append( (square[0], square[1]) )
+
+		square = position
+		#upLeft
+		while(not outOfBounds(square) ):
+			square = ( square[0]  - 1, square[1] - 1)
+			positionsList.append( (square[0], square[1]) )
+
+		square = position
+		#downRight
+		while(not outOfBounds(square) ):
+			square = ( square[0]  + 1, square[1] + 1)
+			positionsList.append( (square[0], square[1]) )
+
+		square = position
+		#downLeft
+		while(not outOfBounds(square) ):
+			square = ( square[0]  - 1, square[1] + 1)
+			positionsList.append( (square[0], square[1]) )
+		
+
 	#remove any out of bounds positions
 	positionsList = list(filter(lambda tup: (tup[0] < 8 and tup[0] >= 0) 
 										and (tup[1] < 8 and tup[1] >= 0),positionsList))
