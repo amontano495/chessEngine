@@ -1,20 +1,17 @@
 import random, pygame, sys
 from pygame.locals import *
+from chessEngine import calcAllPositions, enemySide
 
-FPS = 30 # frames per second, the general speed of the program
-WINDOWWIDTH = 640 # size of window's width in pixels
-WINDOWHEIGHT = 640 # size of windows' height in pixels
+FPS = 30
+WINDOWWIDTH = 640
+WINDOWHEIGHT = 640
 BOXSIZE = 69
 BOARDWIDTH = 8
 BOARDHEIGHT = 8
 XMARGIN = 46
 YMARGIN = 46
-
-GAP = 65
+PIECE_SIZE = 65
 BORDER_WIDTH = 48
-
-WHITE    = (255, 255, 255, 255)
-BLACK    = (0, 0, 0, 255)
 
 def coordToPixels( a,b ):
     x = (BOXSIZE * a) + XMARGIN
@@ -35,81 +32,72 @@ def getTileAtPixel(x,y):
             if boxRect.collidepoint(x, y):
                 return (boxx, boxy)
     return (None, None)
-    
 
 class Piece:
-    def __init__(self, rank, color, pos, blank=True):
+    def __init__(self, rank, color, pixel_pos, board_pos, moveset=None):
         self.color = color
         self.rank = rank
         self.img = pygame.image.load('img/' + color + '_' + rank + '.png')
-        self.img = pygame.transform.scale(self.img, (65,65))
-        self.pos = pos
-        self.blank = blank
+        self.img = pygame.transform.scale(self.img, (PIECE_SIZE,PIECE_SIZE))
+        self.pixel_pos = pixel_pos
+        self.board_pos = board_pos
+        self.moveset = moveset
+     
+    def draw(self, displaySurf):
+        displaySurf.blit(self.img, self.pixel_pos)
+    
+    def setMoves(self, board):
+        self.moveset = calcAllPositions(self.rank, self.color, self.board_pos, board)
 
 
 def initBoard(board, displaySurf):
     for i in range(8):
-        board[i][1] = Piece("pawn","black", coordToPixels(i,1))
-        board[i][6] = Piece("pawn","white", coordToPixels(i,6))
-        displaySurf.blit(board[i][1].img, coordToPixels(i,1))
-        displaySurf.blit(board[i][6].img, coordToPixels(i,6))
-        board[i][1].blank = False
-        board[i][6].blank = False
+        board[i][1] = Piece("pawn","black", coordToPixels(i,1), (i,1))
+        board[i][6] = Piece("pawn","white", coordToPixels(i,6), (i,6))
 
     for rank,i in zip(["rook","knight","bishop"], range(3)):
-        board[i][0] = Piece(rank,"black", coordToPixels(i,0))
-        board[i][7] = Piece(rank,"white", coordToPixels(i,7))
-        displaySurf.blit(board[i][0].img, coordToPixels(i,0))
-        displaySurf.blit(board[i][7].img, coordToPixels(i,7))
-        board[i][0].blank = False
-        board[i][7].blank = False
+        board[i][0] = Piece(rank,"black", coordToPixels(i,0), (i,0))
+        board[i][7] = Piece(rank,"white", coordToPixels(i,7), (i,7))
         
     for rank,i in zip(["bishop","knight","rook"], range(5,8)):
-        board[i][0] = Piece(rank,"black", coordToPixels(i,0))
-        board[i][7] = Piece(rank,"white", coordToPixels(i,7))
-        displaySurf.blit(board[i][0].img, coordToPixels(i,0))
-        displaySurf.blit(board[i][7].img, coordToPixels(i,7))
-        board[i][0].blank = False
-        board[i][7].blank = False
+        board[i][0] = Piece(rank,"black", coordToPixels(i,0), (i,0))
+        board[i][7] = Piece(rank,"white", coordToPixels(i,7), (i,7))
 
 
     for side,i in zip(["black","white"], [0,7]):
-        board[4][i] = Piece("king",side, coordToPixels(4,i))
-        board[3][i] = Piece("queen",side, coordToPixels(3,i))
-        displaySurf.blit(board[4][i].img, coordToPixels(4,i))
-        displaySurf.blit(board[3][i].img, coordToPixels(3,i))
-        board[4][i].blank = False
-        board[3][i].blank = False
+        board[4][i] = Piece("king",side, coordToPixels(4,i), (4,i))
+        board[3][i] = Piece("queen",side, coordToPixels(3,i), (3,i))
         
     return board
 
 def drawBoard(board, displaySurf):
     background = pygame.image.load('img/board.png')
-    DISPLAYSURF.blit(background, (0,0))
+    displaySurf.blit(background, (0,0))
     for i in range(BOARDWIDTH):
         for j in range(BOARDHEIGHT):
-            if board[i][j].blank == False:
-                displaySurf.blit(board[i][j].img, board[i][j].pos)
+            if board[i][j] != None:
+                board[i][j].draw(displaySurf)
+                board[i][j].setMoves(board)
 
 pygame.init()
 DISPLAYSURF = pygame.display.set_mode((WINDOWWIDTH, WINDOWHEIGHT))
-background = pygame.image.load('img/board.png')
-DISPLAYSURF.blit(background, (0,0))
 pygame.display.set_caption('Chess')
 
-mousex = 0
-mousey = 0
-
 board = []
-for i in range(8):
+for i in range(BOARDHEIGHT):
     row = []
-    for j in range(8):
-        row.append(Piece('rook','black',coordToPixels(i,j), True))
+    for j in range(BOARDWIDTH):
+        row.append(None)
     board.append(row)
 
 board = initBoard(board,DISPLAYSURF)
+drawBoard(board, DISPLAYSURF)
+
+mousex = 0
+mousey = 0
 pieceBeingHeld = False
 
+player = "white"
 
 while True:
     mouseClicked = False
@@ -128,22 +116,24 @@ while True:
     if tile_x != None and tile_y != None:
 
         if mouseClicked:
-            if pieceBeingHeld == False and board[tile_x][tile_x].blank == False:
-                print("piece picked up")
+        
+            if pieceBeingHeld == False and board[tile_x][tile_y] != None and board[tile_x][tile_y].color == player:
                 controlledPiece = board[tile_x][tile_y]
-                board[tile_x][tile_y].blank = True
+                board[tile_x][tile_y] = None
                 pieceBeingHeld = True
-
-            elif pieceBeingHeld:
-                print("piece put down")
+                
+            elif pieceBeingHeld and (tile_x,tile_y) in controlledPiece.moveset:
                 board[tile_x][tile_y] = controlledPiece
-                board[tile_x][tile_y].pos = coordToPixels(tile_x,tile_y)
-                board[tile_x][tile_y].blank = False
+                board[tile_x][tile_y].board_pos = (tile_x,tile_y)
+                board[tile_x][tile_y].pixel_pos = coordToPixels(tile_x,tile_y)
                 pieceBeingHeld = False
+                
+                player = enemySide(player)
 
+            elif pieceBeingHeld and (tile_x,tile_y) not in controlledPiece.moveset:
+                print("Invalid move")
+                
             drawBoard(board, DISPLAYSURF)
-            
-
         
     pygame.display.update()
 
