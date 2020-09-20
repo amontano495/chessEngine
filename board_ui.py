@@ -46,8 +46,8 @@ class Piece:
     def draw(self, displaySurf):
         displaySurf.blit(self.img, self.pixel_pos)
     
-    def setMoves(self, board):
-        self.moveset = calcAllPositions(self.rank, self.color, self.board_pos, board)
+    def setMoves(self, board, players):
+        self.moveset = calcAllPositions(self.rank, self.color, self.board_pos, board, players)
 
 
 def initBoard(board, displaySurf):
@@ -77,11 +77,20 @@ def drawBoard(board, displaySurf):
         for j in range(BOARDHEIGHT):
             if board[i][j] != None:
                 board[i][j].draw(displaySurf)
-                board[i][j].setMoves(board)
+                board[i][j].setMoves(board, players)
 
 pygame.init()
 DISPLAYSURF = pygame.display.set_mode((WINDOWWIDTH, WINDOWHEIGHT))
 pygame.display.set_caption('Chess')
+
+
+white = []
+black = []
+
+players = {
+    'white' : white,
+    'black' : black
+}
 
 board = []
 for i in range(BOARDHEIGHT):
@@ -92,6 +101,13 @@ for i in range(BOARDHEIGHT):
 
 board = initBoard(board,DISPLAYSURF)
 drawBoard(board, DISPLAYSURF)
+
+for i in range(BOARDHEIGHT):
+    for j in range(BOARDWIDTH):
+        if board[i][j] != None:
+            players[board[i][j].color].append(board[i][j])
+
+
 
 mousex = 0
 mousey = 0
