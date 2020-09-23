@@ -39,25 +39,23 @@ def enemySide(player):
 def pawnPositions(rank, color, position, board, players):
     positionsList = []
 
-    #if there is an enemy diagonally adjacent, can move there
-    for side,direction in zip(["white","black"],[-1,1]):
-        diagLeft = ( position[0] - 1, position[1] + direction )
-        diagRight = ( position[0] + 1, position[1] + direction)
+    #black pieces move down the board, white pieces move up
+    direction = 1 if color == "black" else -1
 
-        #for each space diagonally up left, right
-        for tile in [diagLeft,diagRight]:
-            #if space is not out of bounds
-            if not outOfBounds(tile) and board[tile[0]][tile[1]] != None:
-                adjacentPiece = board[tile[0]][tile[1]]
+    diagLeft = (position[0] - 1, position[1] + direction)
+    diagRight = (position[0] + 1, position[1] + direction)
+    moveForward = (position[0], position[1] + direction)
 
-                #if space contains an enemy piece, add to list
-                if adjacentPiece.color == enemySide(color):
-                    positionsList.append(tile)
+    for move in [diagLeft, diagRight]:
+        if outOfBounds(move) == False:
+            tile = board[move[0]][move[1]]
+            if tile != None:
+                if tile.color == enemySide(color):
+                    positionsList.append(move)
 
-        #default movement is forward 1 and forward 2 spaces
-        positionsList.append((position[0] , position[1] + direction))
-        if (position[1] == 6 and color == "white") or (position[1] == 1 and color == "black"):
-            positionsList.append((position[0] , position[1] + direction*2))
+    positionsList.append(moveForward)
+    if (position[1] == 6 and color == "white") or (position[1] == 1 and color == "black"):
+        positionsList.append((position[0] , position[1] + direction*2))
     
     return positionsList
 
