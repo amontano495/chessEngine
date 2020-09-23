@@ -1,4 +1,4 @@
-#class definition for piece object
+#CLass definition for piece object
 class Piece:
     def __init__(self, rank, player, position, possibleMoves):
         #rank: King, Queen, Knight, etc
@@ -194,14 +194,18 @@ def kingPositions(rank, color, position, board, players):
 
     topleft = ( position[0]  - 1, position[1] - 1 )
     botright = ( position[0]  + 1, position[1] + 1 )
-    possibleEnemyPositions = []
 
-    for piece in players[enemySide(color)]:
-        possibleEnemyPositions.append(piece.moveset)
+    if color == "white":
+        possibleEnemyPositions = players[1].possibleNextMoves
+    else:
+        possibleEnemyPositions = players[0].possibleNextMoves
 
-    for i in range(topleft[0], botright[0]):
-        for j in range(topleft[1], botright[1]):
+    print(enemySide(color) + " POSITIONS: " + str(possibleEnemyPositions))
+
+    for i in range(topleft[0], botright[0] + 1):
+        for j in range(topleft[1], botright[1] + 1):
             if (i,j) != position and not outOfBounds((i,j)) and (i,j) not in possibleEnemyPositions:
+                print(i,j)
                 positionsList.append( (i,j) )
 
     return positionsList

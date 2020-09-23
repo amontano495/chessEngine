@@ -33,6 +33,21 @@ def getTileAtPixel(x,y):
                 return (boxx, boxy)
     return (None, None)
 
+class Player:
+    def __init__(self, pieces, moves, color):
+        self.pieces = pieces
+        self.possibleNextMoves = moves
+        self.color = color
+
+    def calcNextMoves(self):
+        moveList = []
+        for piece in self.pieces:
+            for move in piece.moveset:
+                moveList.append(move)
+        
+        self.possibleNextMoves = moveList
+
+
 class Piece:
     def __init__(self, rank, color, pixel_pos, board_pos, moveset=None):
         self.color = color
@@ -70,6 +85,11 @@ def initBoard(board, displaySurf):
         
     return board
 
+def drawMoves(moves, displaySurf):
+    for move in moves:
+        left, top = leftTopCoordsOfBox(move[0],move[1])
+        pygame.draw.rect(displaySurf, (255,0,0), pygame.Rect(left, top, BOXSIZE, BOXSIZE), 1)
+
 def drawBoard(board, displaySurf):
     background = pygame.image.load('img/board.png')
     displaySurf.blit(background, (0,0))
@@ -78,19 +98,19 @@ def drawBoard(board, displaySurf):
             if board[i][j] != None:
                 board[i][j].draw(displaySurf)
                 board[i][j].setMoves(board, players)
+                drawMoves(board[i][j].moveset, displaySurf)
+
 
 pygame.init()
 DISPLAYSURF = pygame.display.set_mode((WINDOWWIDTH, WINDOWHEIGHT))
 pygame.display.set_caption('Chess')
 
-
-white = []
-black = []
-
-players = {
-    'white' : white,
-    'black' : black
-}
+#set up players
+white = Player([], [], "white")
+black = Player([], [], "black")
+players = [white, black]
+white.calcNextMoves()
+black.calcNextMoves()
 
 board = []
 for i in range(BOARDHEIGHT):
@@ -105,10 +125,12 @@ drawBoard(board, DISPLAYSURF)
 for i in range(BOARDHEIGHT):
     for j in range(BOARDWIDTH):
         if board[i][j] != None:
-            players[board[i][j].color].append(board[i][j])
+            if board[i][j].color == "white":
+                white.pieces.append(board[i][j])
+            else:
+                black.pieces.append(board[i][j])
 
-
-
+#print(white.possibleNextMoves)
 mousex = 0
 mousey = 0
 pieceBeingHeld = False
@@ -137,6 +159,7 @@ while True:
                 controlledPiece = board[tile_x][tile_y]
                 board[tile_x][tile_y] = None
                 pieceBeingHeld = True
+                print("POSSIBLE MOVES: " + str(controlledPiece.moveset))
                 
             elif pieceBeingHeld and (tile_x,tile_y) in controlledPiece.moveset:
                 board[tile_x][tile_y] = controlledPiece
@@ -145,12 +168,17 @@ while True:
                 pieceBeingHeld = False
                 
                 player = enemySide(player)
+                print("it is now " + player + "'s turn")
 
-            elif pieceBeingHeld and (tile_x,tile_y) not in controlledPiece.moveset:
+            elif pieceBeingHeld and (tile_x,tile_y) not in controlledPiece.moveset and (tile_x,tile_y) != controlledPiece.board_pos:
                 print("Invalid move")
+            
+            elif pieceBeingHeld and (tile_x,tile_y) == controlledPiece.board_pos:
+                board[tile_x][tile_y] = controlledPiece
+                board[tile_x][tile_y].board_pos = (tile_x,tile_y)
+                board[tile_x][tile_y].pixel_pos = coordToPixels(tile_x,tile_y)
+                pieceBeingHeld = False
                 
             drawBoard(board, DISPLAYSURF)
         
     pygame.display.update()
-
-
