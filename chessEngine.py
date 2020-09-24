@@ -74,116 +74,97 @@ def knightPositions(rank, color, position, board, players):
             
     return positionsList
 
+
 def bishopPositions(rank, color, position, board, players):
     positionsList = []
 
-    tile = position
-    #upRight
-    while(not outOfBounds(tile) ):
-        tile = ( tile[0]  + 1, tile[1] - 1)
-        positionsList.append( (tile[0], tile[1]) )
+    upLeft = position
+    upRight = position
+    downLeft = position
+    downRight = position
 
-    tile = position
-    #upLeft
-    while(not outOfBounds(tile) ):
-        tile = ( tile[0]  - 1, tile[1] - 1)
-        positionsList.append( (tile[0], tile[1]) )
+    upLeftPath = []
+    upRightPath = []
+    downLeftPath = []
+    downRightPath = []
 
-    tile = position
-    #downRight
-    while(not outOfBounds(tile) ):
-        tile = ( tile[0]  + 1, tile[1] + 1)
-        positionsList.append( (tile[0], tile[1]) )
+    for i in range(8):
+        upLeft = (upLeft[0] - 1, upLeft[1] - 1)
+        upLeftPath.append(upLeft)
 
-    tile = position
-    #downLeft
-    while(not outOfBounds(tile) ):
-        tile = ( tile[0]  - 1, tile[1] + 1)
-        positionsList.append( (tile[0], tile[1]) )
-    
+        upRight = (upRight[0] + 1, upRight[1] - 1)
+        upRightPath.append(upRight)
+
+        downLeft = (downLeft[0] - 1, downLeft[1] + 1)
+        downLeftPath.append(downLeft)
+
+        downRight = (downRight[0] + 1, downRight[1] + 1)
+        downRightPath.append(downRight)
+
+    upLeftPath = rookHelper(upLeftPath, color, board)
+    upRightPath = rookHelper(upRightPath, color, board)
+    downLeftPath = rookHelper(downLeftPath, color, board)
+    downRightPath = rookHelper(downRightPath, color, board)
+
+    positionsList = upLeftPath + upRightPath + downLeftPath + downRightPath
+
     return positionsList
 
-            
+def rookHelper(pathList, color, board):
+    count = 0
+    newPath = pathList
+    for pos in pathList:
+        count += 1
+        (x,y) = pos
+        if not outOfBounds(pos):
+            if board[x][y] != None:
+                newPath = pathList[:count]
+                break
+    return newPath
+
 def rookPositions(rank, color, position, board, players):
     positionsList = []
-    
-    tile = position
-    #up
-    while(not outOfBounds(tile) ):
-        tile = ( tile[0] , tile[1] - 1)
-        positionsList.append( (tile[0], tile[1]) )
 
-    tile = position
-    #down
-    while(not outOfBounds(tile) ):
-        tile = ( tile[0] , tile[1] + 1)
-        positionsList.append( (tile[0], tile[1]) )
+    horizontal = []
+    vertical = []
+    for i in range(8):
+        if (i,position[1]) != position:
+            horizontal.append((i,position[1]))
+        if (position[0],i) != position:
+            vertical.append((position[0], i))
 
-    tile = position
-    #left
-    while(not outOfBounds(tile) ):
-        tile = ( tile[0]  - 1, tile[1] )
-        positionsList.append( (tile[0], tile[1]) )
-    
-    tile = position
-    #right
-    while(not outOfBounds(tile) ):
-        tile = ( tile[0]  + 1, tile[1] )
-        positionsList.append( (tile[0], tile[1]) )
+    up = []
+    down = []
+    for pos in vertical:
+        if pos[1] < position[1]:
+            up.append(pos)
+        elif pos[1] > position[1]:
+            down.append(pos)
+    up.reverse()
+
+    left = []
+    right = []    
+    for pos in horizontal:
+        if pos[0] < position[0]:
+            left.append(pos)
+        elif pos[0] > position[0]:
+            right.append(pos)
+    left.reverse()
+
+    up = rookHelper(up, color, board)
+    down = rookHelper(down, color, board)
+    left = rookHelper(left, color, board)
+    right = rookHelper(right, color, board)
+
+    positionsList = left + right + up + down
 
     return positionsList
 
 def queenPositions(rank, color, position, board, players):
-    positionsList = []
+    orthogonalMoves = rookPositions(rank, color, position, board, players)
+    diagonalMoves = bishopPositions(rank, color, position, board, players)
 
-    #queen can move any direction, limitless
-    tile = position
-    #up
-    while(not outOfBounds(tile) ):
-        tile = ( tile[0] , tile[1] - 1)
-        positionsList.append( (tile[0], tile[1]) )
-
-    tile = position
-    #down
-    while(not outOfBounds(tile) ):
-        tile = ( tile[0] , tile[1] + 1)
-        positionsList.append( (tile[0], tile[1]) )
-
-    tile = position
-    #left
-    while(not outOfBounds(tile) ):
-        tile = ( tile[0]  - 1, tile[1] )
-        positionsList.append( (tile[0], tile[1]) )
-    
-    tile = position
-    #right
-    while(not outOfBounds(tile) ):
-        tile = ( tile[0]  + 1, tile[1] )
-        positionsList.append( (tile[0], tile[1]) )
-
-    tile = position
-    #upRight
-    while(not outOfBounds(tile) ):
-        tile = ( tile[0]  + 1, tile[1] - 1)
-        positionsList.append( (tile[0], tile[1]) )
-
-    tile = position
-    #upLeft
-    while(not outOfBounds(tile) ):
-        tile = ( tile[0]  - 1, tile[1] - 1)
-        positionsList.append( (tile[0], tile[1]) )
-
-    tile = position
-    #downRight
-    while(not outOfBounds(tile) ):
-        tile = ( tile[0]  + 1, tile[1] + 1)
-        positionsList.append( (tile[0], tile[1]) )
-
-    tile = position
-    #downLeft
-    while(not outOfBounds(tile) ):
-        tile = ( tile[0]  - 1, tile[1] + 1)
-        positionsList.append( (tile[0], tile[1]) )
+    positionsList = orthogonalMoves + diagonalMoves
     
     return positionsList
 
@@ -198,12 +179,11 @@ def kingPositions(rank, color, position, board, players):
     else:
         possibleEnemyPositions = players[0].possibleNextMoves
 
-    print(enemySide(color) + " POSITIONS: " + str(possibleEnemyPositions))
+    #print(enemySide(color) + " POSITIONS: " + str(possibleEnemyPositions))
 
     for i in range(topleft[0], botright[0] + 1):
         for j in range(topleft[1], botright[1] + 1):
             if (i,j) != position and not outOfBounds((i,j)) and (i,j) not in possibleEnemyPositions:
-                print(i,j)
                 positionsList.append( (i,j) )
 
     return positionsList
