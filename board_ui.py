@@ -8,8 +8,8 @@ WINDOWHEIGHT = 640
 BOXSIZE = 69
 BOARDWIDTH = 8
 BOARDHEIGHT = 8
-XMARGIN = 46
-YMARGIN = 46
+XMARGIN = 45
+YMARGIN = 45
 PIECE_SIZE = 65
 BORDER_WIDTH = 48
 
@@ -88,7 +88,7 @@ def initBoard(board, displaySurf):
 def drawMoves(moves, displaySurf):
     for move in moves:
         left, top = leftTopCoordsOfBox(move[0],move[1])
-        pygame.draw.rect(displaySurf, (255,0,0), pygame.Rect(left, top, BOXSIZE, BOXSIZE), 1)
+        pygame.draw.rect(displaySurf, (0,255,102), pygame.Rect(left, top, BOXSIZE, BOXSIZE), 3)
 
 def drawBoard(board, displaySurf):
     background = pygame.image.load('img/board.png')
@@ -98,7 +98,6 @@ def drawBoard(board, displaySurf):
             if board[i][j] != None:
                 board[i][j].draw(displaySurf)
                 board[i][j].setMoves(board, players)
-                drawMoves(board[i][j].moveset, displaySurf)
 
 
 pygame.init()
@@ -138,6 +137,7 @@ pieceBeingHeld = False
 player = "white"
 
 while True:
+    drawMoves(black.possibleNextMoves,DISPLAYSURF)
     mouseClicked = False
     
     for event in pygame.event.get():
@@ -150,6 +150,9 @@ while True:
             mousex, mousey = event.pos
             mouseClicked = True
 
+    if pieceBeingHeld == True:
+        drawMoves(controlledPiece.moveset, DISPLAYSURF)
+
     tile_x, tile_y = getTileAtPixel(mousex, mousey)
     if tile_x != None and tile_y != None:
 
@@ -159,9 +162,11 @@ while True:
                 controlledPiece = board[tile_x][tile_y]
                 board[tile_x][tile_y] = None
                 pieceBeingHeld = True
-                print("POSSIBLE MOVES: " + str(controlledPiece.moveset))
                 
             elif pieceBeingHeld and (tile_x,tile_y) in controlledPiece.moveset:
+                white.calcNextMoves()
+                black.calcNextMoves()
+
                 board[tile_x][tile_y] = controlledPiece
                 board[tile_x][tile_y].board_pos = (tile_x,tile_y)
                 board[tile_x][tile_y].pixel_pos = coordToPixels(tile_x,tile_y)

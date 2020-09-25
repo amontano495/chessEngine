@@ -178,8 +178,8 @@ def kingPositions(rank, color, position, board, players):
         possibleEnemyPositions = players[1].possibleNextMoves
     else:
         possibleEnemyPositions = players[0].possibleNextMoves
-
-    #print(enemySide(color) + " POSITIONS: " + str(possibleEnemyPositions))
+    
+    print(possibleEnemyPositions)
 
     for i in range(topleft[0], botright[0] + 1):
         for j in range(topleft[1], botright[1] + 1):
