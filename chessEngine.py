@@ -44,8 +44,14 @@ def pawnPositions(rank, color, position, board, players):
 
     diagLeft = (position[0] - 1, position[1] + direction)
     diagRight = (position[0] + 1, position[1] + direction)
-    moveForward = (position[0], position[1] + direction)
 
+    #if there is no enemy directly in front
+    if board[position[0]][position[1] + direction] == None:
+        #pawn is able to move forward
+        moveForward = (position[0], position[1] + direction)
+        positionsList.append(moveForward)
+
+    #pawn can move diagonally if enemy present
     for move in [diagLeft, diagRight]:
         if outOfBounds(move) == False:
             tile = board[move[0]][move[1]]
@@ -53,7 +59,7 @@ def pawnPositions(rank, color, position, board, players):
                 if tile.color == enemySide(color):
                     positionsList.append(move)
 
-    positionsList.append(moveForward)
+    #at initial move, pawn can move two tiles
     if (position[1] == 6 and color == "white") or (position[1] == 1 and color == "black"):
         positionsList.append((position[0] , position[1] + direction*2))
     
@@ -179,7 +185,7 @@ def kingPositions(rank, color, position, board, players):
     else:
         possibleEnemyPositions = players[0].possibleNextMoves
     
-    print(possibleEnemyPositions)
+    #print(possibleEnemyPositions)
 
     for i in range(topleft[0], botright[0] + 1):
         for j in range(topleft[1], botright[1] + 1):
@@ -345,23 +351,15 @@ def getKing(side):
                 return board[i][j]
 
 #determines if a king is in check
-def determineCheck():
-    for side in ["WHITE","BLACK"]:
-        if side == "WHITE":
-            king = list(filter( (lambda p : p.rank == "kING"), whiteSide))[0]
-            for piece in blackSide:
-                if king.position in piece.possibleMoves:
-                    return True
-                else:
-                    return False
+def determineCheck(player, enemy_player):
+    for piece in player.pieces:
+        if piece.rank == "king":
+            king = piece
 
-        if side == "BLACK":
-            king = list(filter( (lambda p : p.rank == "kING") ,blackSide))[0]
-            for piece in whiteSide:
-                if king.position in piece.possibleMoves:
-                    return True
-                else:
-                    return False
+    if king.board_pos in enemy_player.possibleNextMoves:
+        return True
+
+    return False
 
 #determines if game is in checkmate
 def determineCheckmate():

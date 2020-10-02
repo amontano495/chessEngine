@@ -1,6 +1,6 @@
 import random, pygame, sys
 from pygame.locals import *
-from chessEngine import calcAllPositions, enemySide
+from chessEngine import calcAllPositions, enemySide, determineCheck
 
 FPS = 30
 WINDOWWIDTH = 640
@@ -38,6 +38,7 @@ class Player:
         self.pieces = pieces
         self.possibleNextMoves = moves
         self.color = color
+        self.inCheck = False
 
     def calcNextMoves(self):
         moveList = []
@@ -46,6 +47,10 @@ class Player:
                 moveList.append(move)
         
         self.possibleNextMoves = moveList
+
+    def checkStatus(self, enemy):
+        self.inCheck = determineCheck(self, enemy)
+
 
 
 class Piece:
@@ -62,7 +67,11 @@ class Piece:
         displaySurf.blit(self.img, self.pixel_pos)
     
     def setMoves(self, board, players):
-        self.moveset = calcAllPositions(self.rank, self.color, self.board_pos, board, players)
+        self.moveset = calcAllPositions(self.rank, 
+                                        self.color, 
+                                        self.board_pos, 
+                                        board, 
+                                        players)
 
 
 def initBoard(board, displaySurf):
@@ -88,7 +97,15 @@ def initBoard(board, displaySurf):
 def drawMoves(moves, displaySurf):
     for move in moves:
         left, top = leftTopCoordsOfBox(move[0],move[1])
-        pygame.draw.rect(displaySurf, (0,255,102), pygame.Rect(left, top, BOXSIZE, BOXSIZE), 3)
+        pygame.draw.rect(displaySurf, 
+                        (0,255,102), 
+                        pygame.Rect(left, top, BOXSIZE, BOXSIZE), 
+                        3)
+def reInitMoves(board):
+    for i in range(BOARDWIDTH):
+        for j in range(BOARDHEIGHT):
+            if board[i][j] != None:
+                board[i][j].setMoves(board, players)
 
 def drawBoard(board, displaySurf):
     background = pygame.image.load('img/board.png')
@@ -137,7 +154,6 @@ pieceBeingHeld = False
 player = "white"
 
 while True:
-    drawMoves(black.possibleNextMoves,DISPLAYSURF)
     mouseClicked = False
     
     for event in pygame.event.get():
@@ -164,14 +180,23 @@ while True:
                 pieceBeingHeld = True
                 
             elif pieceBeingHeld and (tile_x,tile_y) in controlledPiece.moveset:
-                white.calcNextMoves()
-                black.calcNextMoves()
-
                 board[tile_x][tile_y] = controlledPiece
                 board[tile_x][tile_y].board_pos = (tile_x,tile_y)
                 board[tile_x][tile_y].pixel_pos = coordToPixels(tile_x,tile_y)
                 pieceBeingHeld = False
+
+                reInitMoves(board)
                 
+                white.calcNextMoves()
+                black.calcNextMoves()
+
+                white.checkStatus(black)
+                black.checkStatus(white)
+                
+                if white.inCheck:
+                    print("WHITE IS IN CHECK")
+                if black.inCheck:
+                    print("BLACK IS IN CHECK")
                 player = enemySide(player)
                 print("it is now " + player + "'s turn")
 
