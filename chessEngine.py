@@ -362,30 +362,40 @@ def determineCheck(player, enemy_player):
     return False
 
 #determines if game is in checkmate
-def determineCheckmate():
-    pieceVector = [piece for row in board for piece in row]
-    for side in ["WHITE","BLACK"]:
-        king = getKing(side)
-        enemyPieces = [piece for piece in pieceVector if piece.player == enemySide(side)]
+def determineCheckmate(player, enemy_player, board):
+    for piece in player.pieces:
+        if piece.rank == "king":
+            king = piece
 
-        allPossibleEnemyMoves = []
-        for piece in enemyPieces:
-            allPossibleEnemyMoves.append(piece.possibleMoves)
+    surroundingTiles = []
+    position = king.board_pos
 
+    topleft = ( position[0]  - 1, position[1] - 1 )
+    botright = ( position[0]  + 1, position[1] + 1 )
 
-        print(side)
-        print("KING MOVES")
-        kingMoveset = set(king.possibleMoves)
-        print(kingMoveset)
+    possibleEnemyPositions = enemy_player.possibleNextMoves
 
-        print("ENEMY MOVES")
-        enemyMoveset = set([move for sub in allPossibleEnemyMoves for move in sub])
-        print(enemyMoveset)
+    count = 0
+    neighbors = []
+    for i in range(topleft[0], botright[0] + 1):
+        for j in range(topleft[1], botright[1] + 1):
+            if not outOfBounds( (i,j) ) and (i,j) != king.board_pos:
+                neighbors.append( (i,j) )
 
-        if kingMoveset.issubset(enemyMoveset) and kingMoveset != set():
-            return True
+    safeTileExists = False
+    friendlyNeighbors = 0
+    for tile in neighbors:
+        x,y = tile
+        if board[x][y] == None and tile not in possibleEnemyPositions:
+            safeTileExists = True
+        if board[x][y] != None:
+            if board[x][y].color == king.color:
+                friendlyNeighbors += 1
+        
+    if safeTileExists or friendlyNeighbors == len(neighbors):
+        return False
 
-    return False    
+    return True
         
         
 def main():
