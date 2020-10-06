@@ -1,28 +1,3 @@
-#CLass definition for piece object
-class Piece:
-    def __init__(self, rank, player, position, possibleMoves):
-        #rank: King, Queen, Knight, etc
-        self.rank = rank
-        #White or Black
-        self.player = player
-        #tuple of position on board
-        self.position = position
-        #list of positions available to piece
-        self.possibleMoves = possibleMoves
-
-
-whiteSide = []
-blackSide = []
-
-#global board matrix
-#list of list of Piece objects
-board = []
-for i in range(8):
-    row = []
-    for j in range(8):
-        row.append(Piece("EMPTY","NONE",(i,j),[]))
-    board.append(row)
-
 #determines if tuple is outside of board limits
 def outOfBounds(position):
     if (position[0] >= 0 and position[0] <= 7) and (position[1] >= 0 and position[1] <= 7):
@@ -36,14 +11,13 @@ def enemySide(player):
     else:
         return "white"
 
-def pawnPositions(rank, color, position, board, players):
+#calculate list of valid moves pawn piece can make
+def pawnPositions(color, position, board):
     positionsList = []
 
     #black pieces move down the board, white pieces move up
     direction = 1 if color == "black" else -1
 
-    diagLeft = (position[0] - 1, position[1] + direction)
-    diagRight = (position[0] + 1, position[1] + direction)
 
     #if there is no enemy directly in front
     if board[position[0]][position[1] + direction] == None:
@@ -52,6 +26,9 @@ def pawnPositions(rank, color, position, board, players):
         positionsList.append(moveForward)
 
     #pawn can move diagonally if enemy present
+    diagLeft = (position[0] - 1, position[1] + direction)
+    diagRight = (position[0] + 1, position[1] + direction)
+
     for move in [diagLeft, diagRight]:
         if outOfBounds(move) == False:
             tile = board[move[0]][move[1]]
@@ -65,9 +42,11 @@ def pawnPositions(rank, color, position, board, players):
     
     return positionsList
 
-def knightPositions(rank, color, position, board, players):
+#calculate list of valid moves Knight piece can make
+def knightPositions(position):
     positionsList = []
 
+    #Knight can only move in L shape patterns
     positionsList.append((position[0] + 1, position[1] + 2))
     positionsList.append((position[0] - 1, position[1] + 2))
     positionsList.append((position[0] + 1, position[1] - 2))
@@ -81,19 +60,25 @@ def knightPositions(rank, color, position, board, players):
     return positionsList
 
 
-def bishopPositions(rank, color, position, board, players):
+#calculate list of valid moves Bishop piece can make
+def bishopPositions(position, board):
     positionsList = []
 
+    #bishop makes unlimited diagonal moves
+
+    #starting positions first
     upLeft = position
     upRight = position
     downLeft = position
     downRight = position
 
+    #we will construct diagonal paths
     upLeftPath = []
     upRightPath = []
     downLeftPath = []
     downRightPath = []
 
+    #add tiles to paths, longest possible path length is 8
     for i in range(8):
         upLeft = (upLeft[0] - 1, upLeft[1] - 1)
         upLeftPath.append(upLeft)
@@ -107,88 +92,116 @@ def bishopPositions(rank, color, position, board, players):
         downRight = (downRight[0] + 1, downRight[1] + 1)
         downRightPath.append(downRight)
 
-    upLeftPath = rookHelper(upLeftPath, color, board)
-    upRightPath = rookHelper(upRightPath, color, board)
-    downLeftPath = rookHelper(downLeftPath, color, board)
-    downRightPath = rookHelper(downRightPath, color, board)
+    #paths must be constrained obstructing pieces
+    upLeftPath = rookHelper(upLeftPath, board)
+    upRightPath = rookHelper(upRightPath, board)
+    downLeftPath = rookHelper(downLeftPath, board)
+    downRightPath = rookHelper(downRightPath, board)
 
+    #final list is sum of the paths
     positionsList = upLeftPath + upRightPath + downLeftPath + downRightPath
 
     return positionsList
 
-def rookHelper(pathList, color, board):
+#constrains piece movesets with obstructing pieces
+def rookHelper(pathList, board):
     count = 0
     newPath = pathList
+
     for pos in pathList:
         count += 1
         (x,y) = pos
         if not outOfBounds(pos):
+            #if there is an obstructing piece (any color)
             if board[x][y] != None:
+                #cut off the path at that point
                 newPath = pathList[:count]
                 break
+
     return newPath
 
-def rookPositions(rank, color, position, board, players):
+#calculate list of valid moves Rook piece can make
+def rookPositions(position, board):
     positionsList = []
 
+    #rook can make unlimited side-to-side, up & down moves
     horizontal = []
     vertical = []
+
+    #create horizontal, vertical paths
+    x,y = position
     for i in range(8):
-        if (i,position[1]) != position:
-            horizontal.append((i,position[1]))
-        if (position[0],i) != position:
-            vertical.append((position[0], i))
+        if (i,y) != position:
+            horizontal.append( (i,y) )
+        if (x,i) != position:
+            vertical.append( (x,i) )
 
-    up = []
-    down = []
-    for pos in vertical:
-        if pos[1] < position[1]:
-            up.append(pos)
-        elif pos[1] > position[1]:
-            down.append(pos)
-    up.reverse()
+    #separate vertical path into up and down
+    upPath = []
+    downPath = []
+    for tile in vertical:
+        if tile[1] < y:
+            upPath.append(tile)
+        elif tile[1] > y:
+            downPath.append(tile)
 
-    left = []
-    right = []    
-    for pos in horizontal:
-        if pos[0] < position[0]:
-            left.append(pos)
-        elif pos[0] > position[0]:
-            right.append(pos)
-    left.reverse()
+    #up path is actually backwards since we startd counting from the bottom
+    upPath.reverse()
 
-    up = rookHelper(up, color, board)
-    down = rookHelper(down, color, board)
-    left = rookHelper(left, color, board)
-    right = rookHelper(right, color, board)
+    #separate horizontal path into left and right
+    leftPath = []
+    rightPath = []    
+    for tile in horizontal:
+        if tile[0] < x:
+            leftPath.append(tile)
+        elif tile[0] > x:
+            rightPath.append(tile)
 
-    positionsList = left + right + up + down
+    #similar issue with up path
+    leftPath.reverse()
+
+    #constrain paths with regards to obstructing pieces
+    #the order of the path is important here, hence the reversing
+    upPath = rookHelper(upPath, board)
+    downPath = rookHelper(downPath, board)
+    leftPath = rookHelper(leftPath, board)
+    rightPath = rookHelper(rightPath, board)
+
+    #final list of moves is sum of constructed paths
+    positionsList = leftPath + rightPath + upPath + downPath
 
     return positionsList
 
+#calculate list of valid moves Queen piece can make
 def queenPositions(rank, color, position, board, players):
-    orthogonalMoves = rookPositions(rank, color, position, board, players)
-    diagonalMoves = bishopPositions(rank, color, position, board, players)
+
+    #very simple to calculate, just combine rook and bishop moves
+    orthogonalMoves = rookPositions(position, board)
+    diagonalMoves = bishopPositions(position, board)
 
     positionsList = orthogonalMoves + diagonalMoves
     
     return positionsList
 
+#calculate list of valid moves King piece can make
 def kingPositions(rank, color, position, board, players):
     positionsList = []
 
-    topleft = ( position[0]  - 1, position[1] - 1 )
-    botright = ( position[0]  + 1, position[1] + 1 )
-
+    #king cannot move into tiles under attack by enemy
     if color == "white":
         possibleEnemyPositions = players[1].possibleNextMoves
     else:
         possibleEnemyPositions = players[0].possibleNextMoves
-    
-    #print(possibleEnemyPositions)
 
+    #king can move around in a 3x3 square
+    #start by setting top left and bottom right squares
+    topleft = ( position[0]  - 1, position[1] - 1 )
+    botright = ( position[0]  + 1, position[1] + 1 )
+
+    #traverse through each tile in 3x3 square
     for i in range(topleft[0], botright[0] + 1):
         for j in range(topleft[1], botright[1] + 1):
+            #tile must not be the position the king is in, out of bounds or in enemy attack
             if (i,j) != position and not outOfBounds((i,j)) and (i,j) not in possibleEnemyPositions:
                 positionsList.append( (i,j) )
 
@@ -201,11 +214,11 @@ def calcAllPositions(rank, color, position, board, players):
 
     #if piece is a knight, all "L" positions added to list
     if rank == "knight":
-        positionsList = knightPositions(rank, color, position, board, players)
+        positionsList = knightPositions(position)
 
     #if piece is a pawn
     elif rank == "pawn":
-        positionsList = pawnPositions(rank, color, position, board, players)
+        positionsList = pawnPositions(color, position, board)
 
     #if piece is a king
     elif rank == "king":
@@ -217,11 +230,11 @@ def calcAllPositions(rank, color, position, board, players):
 
     #if piece is a rook
     elif rank == "rook":
-        positionsList = rookPositions(rank, color, position, board, players)
+        positionsList = rookPositions(position, board)
 
     #if piece is a bishop
     elif rank == "bishop":
-        positionsList = bishopPositions(rank, color, position, board, players)
+        positionsList = bishopPositions(position, board)
 
     #remove any out of bounds positions
     positionsList = list(filter(lambda tup: (tup[0] < 8 and tup[0] >= 0) and (tup[1] < 8 and tup[1] >= 0),positionsList))
@@ -236,6 +249,7 @@ def calcAllPositions(rank, color, position, board, players):
         except AttributeError:
             pass
 
+    #for extra measure, remove any invalid moves from the final list
     positionsList = list(set(positionsList) - set(invalidPosList))
 
     return positionsList
@@ -363,73 +377,44 @@ def determineCheck(player, enemy_player):
 
 #determines if game is in checkmate
 def determineCheckmate(player, enemy_player, board):
+    #first, find the king piece
     for piece in player.pieces:
         if piece.rank == "king":
             king = piece
 
+    #we will examine tiles around king
     surroundingTiles = []
     position = king.board_pos
 
     topleft = ( position[0]  - 1, position[1] - 1 )
     botright = ( position[0]  + 1, position[1] + 1 )
 
+    #tiles under attack by enemy
     possibleEnemyPositions = enemy_player.possibleNextMoves
 
-    count = 0
+    #grab all the neighboring tiles into a list
     neighbors = []
     for i in range(topleft[0], botright[0] + 1):
         for j in range(topleft[1], botright[1] + 1):
             if not outOfBounds( (i,j) ) and (i,j) != king.board_pos:
                 neighbors.append( (i,j) )
 
+    #look if all neighbors are friendly pieces or if a safe spot exists
+    #a "safe spot" is a position that is open and not under attack
     safeTileExists = False
     friendlyNeighbors = 0
     for tile in neighbors:
         x,y = tile
+        #if position on the board has no piece and not under attack
         if board[x][y] == None and tile not in possibleEnemyPositions:
             safeTileExists = True
         if board[x][y] != None:
+            #if position on board is friendly
             if board[x][y].color == king.color:
                 friendlyNeighbors += 1
-        
+    #if there is a safe spot or all the neighbors are friendly 
     if safeTileExists or friendlyNeighbors == len(neighbors):
+        #then player has not been checkmated
         return False
 
     return True
-        
-        
-def main():
-    #setup board
-    initBoard()
-    #set current player
-    currentPlayer = "WHITE"
-    #show player board
-    drawBoard()
-
-    play = True
-    while(play):
-            print("CURRENT PLAYER: " + currentPlayer)
-            #get move from player
-            playerInput = input("Enter move...\n")
-            #piece player wants to move
-            piece = anToMat(str(playerInput).split(' ')[0])
-            #space player wants to move to
-            target = anToMat(str(playerInput).split(' ')[1])
-
-            #check if move is acceptable, then switch players
-            playerMove = move(board[piece[0]][piece[1]], target, currentPlayer)
-            if playerMove:    
-                    currentPlayer = "WHITE" if currentPlayer == "BLACK" else "BLACK"
-                    updatePieceMoves()
-
-            
-            #check if game is in checkmate
-            if(determineCheckmate()):
-                print("CHECKMATE!")
-                play = False
-            #play = not determineCheck()
-            drawBoard() 
-
-    #determineCheck()
-    #determineCheckmate()
-    #currentPlayer = not currentPlayer

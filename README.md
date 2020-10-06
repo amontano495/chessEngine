@@ -13,11 +13,12 @@ I'm not that good at chess but I was curious to understand how chess engines are
     - ~~Rook~~
     - ~~Bishop~~
     - ~~Queen~~
-    - King
+    - ~~King~~
+
 2. Game Mechanics
     - ~~Player switching~~
-    - Check
-    - Checkmate
+    - ~~Check~~
+    - ~~Checkmate~~
 3. More Obscure stuff
     - En Passant
     - Castling
@@ -26,3 +27,7 @@ I'm not that good at chess but I was curious to understand how chess engines are
     - General optimization
     - AI Opponent
     - Netplay
+
+---
+
+#Usage
