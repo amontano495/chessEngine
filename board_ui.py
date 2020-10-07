@@ -1,6 +1,6 @@
 import random, pygame, sys
 from pygame.locals import *
-from chessEngine import calcAllPositions, enemySide, determineCheck
+from chessEngine import calcAllPositions, enemySide, determineCheck, determineCheckmate
 
 FPS = 30
 WINDOWWIDTH = 640
@@ -116,6 +116,10 @@ def drawBoard(board, displaySurf):
                 board[i][j].draw(displaySurf)
                 board[i][j].setMoves(board, players)
 
+def drawPiece(piece, mousePos, displaySurf):
+    pygame.mouse.set_visible(False)
+    drawPos = (mousePos[0] - BOXSIZE/2, mousePos[1] - BOXSIZE/2)
+    displaySurf.blit(piece.img, drawPos)
 
 pygame.init()
 DISPLAYSURF = pygame.display.set_mode((WINDOWWIDTH, WINDOWHEIGHT))
@@ -153,7 +157,9 @@ pieceBeingHeld = False
 
 player = "white"
 
-while True:
+gameOver = False
+
+while not gameOver:
     mouseClicked = False
     
     for event in pygame.event.get():
@@ -167,7 +173,9 @@ while True:
             mouseClicked = True
 
     if pieceBeingHeld == True:
+        drawBoard(board, DISPLAYSURF)
         drawMoves(controlledPiece.moveset, DISPLAYSURF)
+        drawPiece(controlledPiece, (mousex,mousey), DISPLAYSURF)
 
     tile_x, tile_y = getTileAtPixel(mousex, mousey)
     if tile_x != None and tile_y != None:
@@ -192,18 +200,28 @@ while True:
 
                 white.checkStatus(black)
                 black.checkStatus(white)
+
+                if determineCheckmate(black,white,board):
+                    print("BLACK HAS BEEN CHECKMATED")
+                    gameOver = True
+                if determineCheckmate(white,black,board):
+                    print("WHITE HAS BEEN CHECKMATED")
+                    gameOver = True
                 
                 if white.inCheck:
                     print("WHITE IS IN CHECK")
                 if black.inCheck:
                     print("BLACK IS IN CHECK")
+
                 player = enemySide(player)
                 print("it is now " + player + "'s turn")
+                pygame.mouse.set_visible(True)
 
             elif pieceBeingHeld and (tile_x,tile_y) not in controlledPiece.moveset and (tile_x,tile_y) != controlledPiece.board_pos:
                 print("Invalid move")
             
             elif pieceBeingHeld and (tile_x,tile_y) == controlledPiece.board_pos:
+                pygame.mouse.set_visible(True)
                 board[tile_x][tile_y] = controlledPiece
                 board[tile_x][tile_y].board_pos = (tile_x,tile_y)
                 board[tile_x][tile_y].pixel_pos = coordToPixels(tile_x,tile_y)
@@ -212,3 +230,5 @@ while True:
             drawBoard(board, DISPLAYSURF)
         
     pygame.display.update()
+
+print("Checkmate! Game over...")
