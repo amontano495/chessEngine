@@ -125,6 +125,9 @@ pygame.init()
 DISPLAYSURF = pygame.display.set_mode((WINDOWWIDTH, WINDOWHEIGHT))
 pygame.display.set_caption('Chess')
 
+checkmateTextFont = pygame.font.SysFont('didot.ttc',72)
+checmateTextImg = checkmateTextFont.render('didot.ttc', True, (255,255,255))
+
 #set up players
 white = Player([], [], "white")
 black = Player([], [], "black")
@@ -159,7 +162,7 @@ player = "white"
 
 gameOver = False
 
-while not gameOver:
+while True:
     mouseClicked = False
     
     for event in pygame.event.get():
@@ -202,9 +205,11 @@ while not gameOver:
                 black.checkStatus(white)
 
                 if determineCheckmate(black,white,board):
+                    DISPLAYSURF.blit(checkmateTextImg, (0,0))
                     print("BLACK HAS BEEN CHECKMATED")
                     gameOver = True
                 if determineCheckmate(white,black,board):
+                    DISPLAYSURF.blit(checkmateTextImg, (0,0))
                     print("WHITE HAS BEEN CHECKMATED")
                     gameOver = True
                 
