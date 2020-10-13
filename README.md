@@ -31,3 +31,9 @@ I'm not that good at chess but I was curious to understand how chess engines are
 ---
 
 #Usage
+
+---
+
+```
+python board_ui.py
+```
