@@ -13,6 +13,7 @@ YMARGIN = 45
 PIECE_SIZE = 65
 BORDER_WIDTH = 48
 
+
 def coordToPixels( a,b ):
     x = (BOXSIZE * a) + XMARGIN
     y = (BOXSIZE * b) + YMARGIN
@@ -125,6 +126,9 @@ pygame.init()
 DISPLAYSURF = pygame.display.set_mode((WINDOWWIDTH, WINDOWHEIGHT))
 pygame.display.set_caption('Chess')
 
+pickup_sound = pygame.mixer.Sound("sounds/pickup.wav")
+putdown_sound = pygame.mixer.Sound("sounds/putdown.wav")
+
 checkmateTextFont = pygame.font.SysFont('didot.ttc',72)
 checmateTextImg = checkmateTextFont.render('didot.ttc', True, (255,255,255))
 
@@ -189,8 +193,10 @@ while True:
                 controlledPiece = board[tile_x][tile_y]
                 board[tile_x][tile_y] = None
                 pieceBeingHeld = True
+                pygame.mixer.Sound.play(pickup_sound)
                 
             elif pieceBeingHeld and (tile_x,tile_y) in controlledPiece.moveset:
+                pygame.mixer.Sound.play(putdown_sound)
                 board[tile_x][tile_y] = controlledPiece
                 board[tile_x][tile_y].board_pos = (tile_x,tile_y)
                 board[tile_x][tile_y].pixel_pos = coordToPixels(tile_x,tile_y)
@@ -226,6 +232,7 @@ while True:
                 print("Invalid move")
             
             elif pieceBeingHeld and (tile_x,tile_y) == controlledPiece.board_pos:
+                pygame.mixer.Sound.play(putdown_sound)
                 pygame.mouse.set_visible(True)
                 board[tile_x][tile_y] = controlledPiece
                 board[tile_x][tile_y].board_pos = (tile_x,tile_y)
