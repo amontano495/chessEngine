@@ -1,10 +1,9 @@
 # chessEngine
 
----
-
 I'm not that good at chess but I was curious to understand how chess engines are built for computers. This is my attempt at designing and implementing my own chess in Python. The only 3rd party library I will be using is the Pygame library for the graphics. I intend to also use in house assets for the board and pieces.
 
----
+# Screenshot
+![Screenshot](screenshot.png)
 
 # TODO
 1. Piece Movements
@@ -28,11 +27,11 @@ I'm not that good at chess but I was curious to understand how chess engines are
     - AI Opponent
     - Netplay
 
----
+# Requirements
 
-#Usage
+This software only requires a working Python 3 installation and the Pygame library
 
----
+# Usage
 
 ```
 python board_ui.py
