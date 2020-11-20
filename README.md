@@ -1,6 +1,6 @@
 # chessEngine
 
-I'm not that good at chess but I was curious to understand how chess engines are built for computers. This is my attempt at designing and implementing my own chess in Python. The only 3rd party library I will be using is the Pygame library for the graphics. I intend to also use in house assets for the board and pieces.
+I'm not that good at chess but I was curious to understand how chess engines are built for computers. This is my attempt at designing and implementing my own chess in Python. The only 3rd party library I will be using is the Pygame library for the graphics.
 
 # Screenshot
 ![Screenshot](screenshot.png)
