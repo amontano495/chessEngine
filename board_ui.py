@@ -143,7 +143,9 @@ pickup_sound = pygame.mixer.Sound("sounds/pickup.wav")
 putdown_sound = pygame.mixer.Sound("sounds/putdown.wav")
 
 checkmateTextFont = pygame.font.SysFont('didot.ttc',72)
-checmateTextImg = checkmateTextFont.render('didot.ttc', True, (255,255,255))
+checkmateTextImg = checkmateTextFont.render('CHECKMATE', True, (255,0,0)) 
+checkmateTextRect = checkmateTextImg.get_rect()
+checkmateTextRect.center = ( WINDOWWIDTH // 2 , WINDOWWIDTH // 2 )
 
 #set up players
 white = Player([], [], "white")
@@ -182,93 +184,96 @@ gameOver = False
 
 #game loop starts
 while True:
-    mouseClicked = False
+    if gameOver:
+        DISPLAYSURF.blit(checkmateTextImg,checkmateTextRect)
+    else:
+        mouseClicked = False
 
-    for event in pygame.event.get():
-        if event.type == QUIT:
-            pygame.quit()
-            sys.exit()
-        elif event.type == MOUSEMOTION:
-            mousex, mousey = event.pos
-        elif event.type == MOUSEBUTTONUP:
-            mousex, mousey = event.pos
-            mouseClicked = True
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                pygame.quit()
+                sys.exit()
+            elif event.type == MOUSEMOTION:
+                mousex, mousey = event.pos
+            elif event.type == MOUSEBUTTONUP:
+                mousex, mousey = event.pos
+                mouseClicked = True
 
-    #if the chess piece is held, draw it on the board
-    if pieceBeingHeld == True:
-        drawBoard(board, DISPLAYSURF)
-        drawMoves(controlledPiece.moveset, DISPLAYSURF)
-        drawPiece(controlledPiece, (mousex,mousey), DISPLAYSURF)
-
-    #get board tile where mouse is at
-    tile_x, tile_y = getTileAtPixel(mousex, mousey)
-    if tile_x != None and tile_y != None:
-
-        if mouseClicked:
-
-            #if a piece is not being held and player clicked on a piece that belongs to them
-            if pieceBeingHeld == False and board[tile_x][tile_y] != None and board[tile_x][tile_y].color == player:
-                #piece is now picked up
-                controlledPiece = board[tile_x][tile_y]
-                board[tile_x][tile_y] = None
-                pieceBeingHeld = True
-                pygame.mixer.Sound.play(pickup_sound)
-               
-            #if a piece is held and player clicked on a valid board spot
-            elif pieceBeingHeld and (tile_x,tile_y) in controlledPiece.moveset:
-                #place piece down
-                pygame.mixer.Sound.play(putdown_sound)
-                board[tile_x][tile_y] = controlledPiece
-                board[tile_x][tile_y].board_pos = (tile_x,tile_y)
-                board[tile_x][tile_y].pixel_pos = coordToPixels(tile_x,tile_y)
-                pieceBeingHeld = False
-
-                #recalc all the moves
-                reInitMoves(board)
-                
-                white.calcNextMoves()
-                black.calcNextMoves()
-
-                #determine check and checkmate status
-                white.checkStatus(black)
-                black.checkStatus(white)
-
-                if determineCheckmate(black,white,board):
-                    DISPLAYSURF.blit(checkmateTextImg, (0,0))
-                    print("BLACK HAS BEEN CHECKMATED")
-                    gameOver = True
-                if determineCheckmate(white,black,board):
-                    DISPLAYSURF.blit(checkmateTextImg, (0,0))
-                    print("WHITE HAS BEEN CHECKMATED")
-                    gameOver = True
-                
-                if white.inCheck:
-                    print("WHITE IS IN CHECK")
-                if black.inCheck:
-                    print("BLACK IS IN CHECK")
-
-                #flip player
-                player = enemySide(player)
-                print("it is now " + player + "'s turn")
-                pygame.mouse.set_visible(True)
-
-            #if a piece is held and player tries to click on invalid spot
-            elif pieceBeingHeld and (tile_x,tile_y) not in controlledPiece.moveset and (tile_x,tile_y) != controlledPiece.board_pos:
-                print("Invalid move")
-           
-            #if piece is held and player clicks on original spot
-            elif pieceBeingHeld and (tile_x,tile_y) == controlledPiece.board_pos:
-                #place piece back at original position
-                pygame.mixer.Sound.play(putdown_sound)
-                pygame.mouse.set_visible(True)
-                board[tile_x][tile_y] = controlledPiece
-                board[tile_x][tile_y].board_pos = (tile_x,tile_y)
-                board[tile_x][tile_y].pixel_pos = coordToPixels(tile_x,tile_y)
-                pieceBeingHeld = False
-               
-            #draw board with new updates
+        #if the chess piece is held, draw it on the board
+        if pieceBeingHeld == True:
             drawBoard(board, DISPLAYSURF)
-        
+            drawMoves(controlledPiece.moveset, DISPLAYSURF)
+            drawPiece(controlledPiece, (mousex,mousey), DISPLAYSURF)
+
+        #get board tile where mouse is at
+        tile_x, tile_y = getTileAtPixel(mousex, mousey)
+        if tile_x != None and tile_y != None:
+
+            if mouseClicked:
+
+                #if a piece is not being held and player clicked on a piece that belongs to them
+                if pieceBeingHeld == False and board[tile_x][tile_y] != None and board[tile_x][tile_y].color == player:
+                    #piece is now picked up
+                    controlledPiece = board[tile_x][tile_y]
+                    board[tile_x][tile_y] = None
+                    pieceBeingHeld = True
+                    pygame.mixer.Sound.play(pickup_sound)
+                   
+                #if a piece is held and player clicked on a valid board spot
+                elif pieceBeingHeld and (tile_x,tile_y) in controlledPiece.moveset:
+                    #place piece down
+                    pygame.mixer.Sound.play(putdown_sound)
+                    board[tile_x][tile_y] = controlledPiece
+                    board[tile_x][tile_y].board_pos = (tile_x,tile_y)
+                    board[tile_x][tile_y].pixel_pos = coordToPixels(tile_x,tile_y)
+                    pieceBeingHeld = False
+
+                    #recalc all the moves
+                    reInitMoves(board)
+                    
+                    white.calcNextMoves()
+                    black.calcNextMoves()
+
+                    #determine check and checkmate status
+                    white.checkStatus(black)
+                    black.checkStatus(white)
+
+                    if determineCheckmate(black,white,board):
+                        DISPLAYSURF.blit(checkmateTextImg, (0,0))
+                        print("BLACK HAS BEEN CHECKMATED")
+                        gameOver = True
+                    if determineCheckmate(white,black,board):
+                        DISPLAYSURF.blit(checkmateTextImg, (0,0))
+                        print("WHITE HAS BEEN CHECKMATED")
+                        gameOver = True
+                    
+                    if white.inCheck:
+                        print("WHITE IS IN CHECK")
+                    if black.inCheck:
+                        print("BLACK IS IN CHECK")
+
+                    #flip player
+                    player = enemySide(player)
+                    print("it is now " + player + "'s turn")
+                    pygame.mouse.set_visible(True)
+
+                #if a piece is held and player tries to click on invalid spot
+                elif pieceBeingHeld and (tile_x,tile_y) not in controlledPiece.moveset and (tile_x,tile_y) != controlledPiece.board_pos:
+                    print("Invalid move")
+               
+                #if piece is held and player clicks on original spot
+                elif pieceBeingHeld and (tile_x,tile_y) == controlledPiece.board_pos:
+                    #place piece back at original position
+                    pygame.mixer.Sound.play(putdown_sound)
+                    pygame.mouse.set_visible(True)
+                    board[tile_x][tile_y] = controlledPiece
+                    board[tile_x][tile_y].board_pos = (tile_x,tile_y)
+                    board[tile_x][tile_y].pixel_pos = coordToPixels(tile_x,tile_y)
+                    pieceBeingHeld = False
+                   
+                #draw board with new updates
+                drawBoard(board, DISPLAYSURF)
+            
     pygame.display.update()
 
 print("Checkmate! Game over...")
