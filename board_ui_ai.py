@@ -134,6 +134,17 @@ def drawPiece(piece, mousePos, displaySurf):
     drawPos = (mousePos[0] - BOXSIZE/2, mousePos[1] - BOXSIZE/2)
     displaySurf.blit(piece.img, drawPos)
 
+def trackPieces(board,white,black):
+    white.pieces = []
+    black.pieces = []
+    for i in range(BOARDHEIGHT):
+        for j in range(BOARDWIDTH):
+            if board[i][j] != None:
+                if board[i][j].color == "white":
+                    white.pieces.append(board[i][j])
+                else:
+                    black.pieces.append(board[i][j])
+
 #setup pygame library
 pygame.init()
 DISPLAYSURF = pygame.display.set_mode((WINDOWWIDTH, WINDOWHEIGHT))
@@ -164,14 +175,7 @@ for i in range(BOARDHEIGHT):
 
 board = initBoard(board,DISPLAYSURF)
 drawBoard(board, DISPLAYSURF)
-
-for i in range(BOARDHEIGHT):
-    for j in range(BOARDWIDTH):
-        if board[i][j] != None:
-            if board[i][j].color == "white":
-                white.pieces.append(board[i][j])
-            else:
-                black.pieces.append(board[i][j])
+trackPieces(board,white,black)
 
 mousex = 0
 mousey = 0
@@ -235,6 +239,7 @@ while True:
                 print("BLACK IS IN CHECK")
             player = "white"
             drawBoard(board, DISPLAYSURF)
+            trackPieces(board,white,black)
 
         else:
             for event in pygame.event.get():
@@ -247,14 +252,16 @@ while True:
                     mousex, mousey = event.pos
                     mouseClicked = True
 
+
+            #get board tile where mouse is at
+            tile_x, tile_y = getTileAtPixel(mousex, mousey)
+
             #if the chess piece is held, draw it on the board
             if pieceBeingHeld == True:
                 drawBoard(board, DISPLAYSURF)
                 drawMoves(controlledPiece.moveset, DISPLAYSURF)
                 drawPiece(controlledPiece, (mousex,mousey), DISPLAYSURF)
 
-            #get board tile where mouse is at
-            tile_x, tile_y = getTileAtPixel(mousex, mousey)
             if tile_x != None and tile_y != None:
 
                 if mouseClicked:
@@ -321,6 +328,7 @@ while True:
                        
                     #draw board with new updates
                     drawBoard(board, DISPLAYSURF)
+                    trackPieces(board,white,black)
             
     pygame.display.update()
 

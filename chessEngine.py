@@ -366,11 +366,12 @@ def getKing(side):
 
 #determines if a king is in check
 def determineCheck(player, enemy_player):
+    king = None
     for piece in player.pieces:
         if piece.rank == "king":
             king = piece
 
-    if king.board_pos in enemy_player.possibleNextMoves:
+    if king == None or king.board_pos in enemy_player.possibleNextMoves:
         return True
 
     return False
