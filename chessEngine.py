@@ -407,14 +407,16 @@ def determineCheckmate(player, enemy_player, board):
     for tile in neighbors:
         x,y = tile
         #if position on the board has no piece and not under attack
-        if board[x][y] == None and tile not in possibleEnemyPositions:
+        if tile not in possibleEnemyPositions:
             safeTileExists = True
-        if board[x][y] != None:
+
+#        if board[x][y] != None:
             #if position on board is friendly
-            if board[x][y].color == king.color:
-                friendlyNeighbors += 1
+#            if board[x][y].color == king.color:
+#                friendlyNeighbors += 1
     #if there is a safe spot or all the neighbors are friendly 
-    if safeTileExists or friendlyNeighbors == len(neighbors):
+    #if safeTileExists or friendlyNeighbors == len(neighbors):
+    if safeTileExists:
         #then player has not been checkmated
         return False
 
