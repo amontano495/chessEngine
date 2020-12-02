@@ -1,6 +1,6 @@
 import random, pygame, sys
 from pygame.locals import *
-from chessEngine import calcAllPositions, enemySide, determineCheck, determineCheckmate
+from chessEngine import calcAllPositions, enemySide, determineCheck, determineCheckmate, getStrength, nextBestMove
 
 FPS = 30
 WINDOWWIDTH = 640
@@ -63,6 +63,7 @@ class Piece:
     def __init__(self, rank, color, pixel_pos, board_pos, moveset=None):
         self.color = color
         self.rank = rank
+        self.strength = getStrength(self.rank)
         self.img = pygame.image.load('img/' + color + '_' + rank + '.png')
         self.img = pygame.transform.scale(self.img, (PIECE_SIZE,PIECE_SIZE))
         self.pixel_pos = pixel_pos
@@ -195,24 +196,16 @@ while True:
 
         if player == "black":
 
-            for piece in black.pieces:
-                blackPiece = piece
-                if len(piece.moveset) != 0:
-                    for move in piece.moveset:
-                        rand_x,rand_y = move[0],move[1]
-                        boardTarget = board[rand_x][rand_y]
-                        if boardTarget != None:
-                            if boardTarget.color != player:
-                                break
-                else:
-                    continue
+            (old,new) = nextBestMove(board,black)
+            old_x,old_y = old
+            new_x,new_y = new
 
-            old_x,old_y = blackPiece.board_pos
+            blackPiece = board[old_x][old_y]
+
+            board[new_x][new_y] = blackPiece
+            board[new_x][new_y].board_pos = (new_x,new_y)
+            board[new_x][new_y].pixel_pos = coordToPixels(new_x,new_y)
             board[old_x][old_y] = None
-
-            board[rand_x][rand_y] = blackPiece
-            board[rand_x][rand_y].board_pos = (rand_x,rand_y)
-            board[rand_x][rand_y].pixel_pos = coordToPixels(rand_x,rand_y)
 
             pygame.mixer.Sound.play(putdown_sound)
             reInitMoves(board)

@@ -254,6 +254,35 @@ def calcAllPositions(rank, color, position, board, players):
 
     return positionsList
 
+def getStrength(rank):
+    strength = 0
+
+    #if piece is a knight
+    if rank == "knight":
+        strength = 30
+
+    #if piece is a pawn
+    elif rank == "pawn":
+        strength = 10
+
+    #if piece is a king
+    elif rank == "king":
+        strength = 900
+
+    #if piece is a queen
+    elif rank == "queen":
+        strength = 90
+
+    #if piece is a rook
+    elif rank == "rook":
+        strength = 50
+
+    #if piece is a bishop
+    elif rank == "bishop":
+        strength = 30
+
+    return strength
+
 #determines if move is acceptable by standard chess rules    
 def validMove(piece, target, player):
     #check if piece being moved is owned by player
@@ -375,6 +404,51 @@ def determineCheck(player, enemy_player):
         return True
 
     return False
+
+#generate all possible next boards from current board
+def moveGen(board, player):
+    nextBoards = []
+    for piece in player.pieces:
+        for move in piece.moveset:
+            possibleBoard = board
+            old_x,old_y = piece.board_pos
+            new_x,new_y = move
+            possibleBoard[old_x][old_y] = None
+            possibleBoard[new_x][new_y] = piece
+            nextBoards.append(possibleBoard)
+
+    return nextBoards
+
+def evalBoard(board, player):
+    totalStrength = 0
+    for i in range(len(board)):
+        for j in range(len(board)):
+            if board[i][j] != None:
+                if board[i][j].color == player.color:
+                    totalStrength += board[i][j].strength
+                else:
+                    totalStrength -= board[i][j].strength
+
+    return totalStrength
+
+#pick next best move
+def nextBestMove(board, player):
+    maxStrength = 0
+    for piece in player.pieces:
+        for move in piece.moveset:
+            possibleBoard = board
+            old_x,old_y = piece.board_pos
+            new_x,new_y = move
+            possibleBoard[old_x][old_y] = None
+            possibleBoard[new_x][new_y] = piece
+            strengthTest = evalBoard(possibleBoard, player)
+            if strengthTest > maxStrength:
+                maxStrength = strengthTest
+                bestMove = (new_x,new_y)
+                bestPiece = (old_x,old_y)
+    print((bestPiece,bestMove))
+
+    return (bestPiece,bestMove)
 
 #determines if game is in checkmate
 def determineCheckmate(player, enemy_player, board):
