@@ -196,11 +196,16 @@ while True:
 
         if player == "black":
 
+            print(board[6][1])
             (old,new) = nextBestMove(board,black)
             old_x,old_y = old
             new_x,new_y = new
+            print(old_x,old_y)
+            print(board[old_x][old_y])
 
             blackPiece = board[old_x][old_y]
+            print(blackPiece.rank)
+            print(blackPiece.board_pos)
 
             board[new_x][new_y] = blackPiece
             board[new_x][new_y].board_pos = (new_x,new_y)

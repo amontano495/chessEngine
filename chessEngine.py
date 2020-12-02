@@ -432,21 +432,22 @@ def evalBoard(board, player):
     return totalStrength
 
 #pick next best move
-def nextBestMove(board, player):
+def nextBestMove(game_board, player):
     maxStrength = 0
     for piece in player.pieces:
         for move in piece.moveset:
-            possibleBoard = board
+            possibleBoard = game_board
             old_x,old_y = piece.board_pos
             new_x,new_y = move
             possibleBoard[old_x][old_y] = None
             possibleBoard[new_x][new_y] = piece
             strengthTest = evalBoard(possibleBoard, player)
-            if strengthTest > maxStrength:
+            possibleBoard[old_x][old_y] = piece
+            possibleBoard[new_x][new_y] = None
+            if strengthTest > maxStrength or maxStrength == 0:
                 maxStrength = strengthTest
                 bestMove = (new_x,new_y)
                 bestPiece = (old_x,old_y)
-    print((bestPiece,bestMove))
 
     return (bestPiece,bestMove)
 
