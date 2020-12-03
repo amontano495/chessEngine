@@ -64,6 +64,7 @@ class Piece:
         self.color = color
         self.rank = rank
         self.strength = getStrength(self.rank)
+        self.protected = False
         self.img = pygame.image.load('img/' + color + '_' + rank + '.png')
         self.img = pygame.transform.scale(self.img, (PIECE_SIZE,PIECE_SIZE))
         self.pixel_pos = pixel_pos
@@ -146,6 +147,11 @@ def trackPieces(board,white,black):
                 else:
                     black.pieces.append(board[i][j])
 
+def printPieceInfo(piece):
+    print("rank: " + piece.rank)
+    print("color: " + piece.color)
+    print("protected?: " + str(piece.protected))
+
 #setup pygame library
 pygame.init()
 DISPLAYSURF = pygame.display.set_mode((WINDOWWIDTH, WINDOWHEIGHT))
@@ -196,20 +202,17 @@ while True:
 
         if player == "black":
 
-            print(board[6][1])
             (old,new) = nextBestMove(board,black)
             old_x,old_y = old
             new_x,new_y = new
-            print(old_x,old_y)
-            print(board[old_x][old_y])
+            print(old)
 
             blackPiece = board[old_x][old_y]
-            print(blackPiece.rank)
-            print(blackPiece.board_pos)
 
             board[new_x][new_y] = blackPiece
             board[new_x][new_y].board_pos = (new_x,new_y)
             board[new_x][new_y].pixel_pos = coordToPixels(new_x,new_y)
+
             board[old_x][old_y] = None
 
             pygame.mixer.Sound.play(putdown_sound)
@@ -263,15 +266,25 @@ while True:
             if tile_x != None and tile_y != None:
 
                 if mouseClicked:
+                    reInitMoves(board)
+                    if(board[tile_x][tile_y] != None):
+                        printPieceInfo(board[tile_x][tile_y])
 
                     #if a piece is not being held and player clicked on a piece that belongs to them
-                    if pieceBeingHeld == False and board[tile_x][tile_y] != None and board[tile_x][tile_y].color == player:
+                    if pieceBeingHeld == False and board[tile_x][tile_y] != None and board[tile_x][tile_y].color == player and not white.inCheck:
                         #piece is now picked up
                         controlledPiece = board[tile_x][tile_y]
                         board[tile_x][tile_y] = None
                         pieceBeingHeld = True
                         pygame.mixer.Sound.play(pickup_sound)
                        
+                    elif pieceBeingHeld == False and board[tile_x][tile_y] != None and board[tile_x][tile_y].color == player and board[tile_x][tile_y].rank == 'king' and white.inCheck:
+                        #piece is now picked up
+                        controlledPiece = board[tile_x][tile_y]
+                        board[tile_x][tile_y] = None
+                        pieceBeingHeld = True
+                        pygame.mixer.Sound.play(pickup_sound)
+
                     #if a piece is held and player clicked on a valid board spot
                     elif pieceBeingHeld and (tile_x,tile_y) in controlledPiece.moveset:
                         #place piece down

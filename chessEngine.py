@@ -18,7 +18,6 @@ def pawnPositions(color, position, board):
     #black pieces move down the board, white pieces move up
     direction = 1 if color == "black" else -1
 
-
     #if there is no enemy directly in front
     if board[position[0]][position[1] + direction] == None:
         #pawn is able to move forward
@@ -38,7 +37,9 @@ def pawnPositions(color, position, board):
 
     #at initial move, pawn can move two tiles
     if (position[1] == 6 and color == "white") or (position[1] == 1 and color == "black"):
-        positionsList.append((position[0] , position[1] + direction*2))
+        if board[position[0]][position[1] + direction*2] == None and board[position[0]][position[1] + direction] == None:
+            positionsList.append((position[0] , position[1] + direction*2))
+
     
     return positionsList
 
@@ -239,13 +240,21 @@ def calcAllPositions(rank, color, position, board, players):
     #remove any out of bounds positions
     positionsList = list(filter(lambda tup: (tup[0] < 8 and tup[0] >= 0) and (tup[1] < 8 and tup[1] >= 0),positionsList))
 
-
+    board[position[0]][position[1]].protected = False
     invalidPosList = []
     #remove positions with pieces on board of same side
     for pos in positionsList:
         try:
             if board[pos[0]][pos[1]].color == color:
+                board[pos[0]][pos[1]].protected = True
                 invalidPosList.append(pos)
+
+            if board[pos[0]][pos[1]].color != color and board[pos[0]][pos[1]].rank == 'king':
+                invalidPosList.append(pos)
+
+            if rank == "king" and board[pos[0]][pos[1]].protected:
+                invalidPosList.append(pos)
+
         except AttributeError:
             pass
 
@@ -436,14 +445,13 @@ def nextBestMove(game_board, player):
     maxStrength = 0
     for piece in player.pieces:
         for move in piece.moveset:
-            possibleBoard = game_board
+            #fix this
+            possibleBoard = game_board.copy()
             old_x,old_y = piece.board_pos
             new_x,new_y = move
             possibleBoard[old_x][old_y] = None
             possibleBoard[new_x][new_y] = piece
             strengthTest = evalBoard(possibleBoard, player)
-            possibleBoard[old_x][old_y] = piece
-            possibleBoard[new_x][new_y] = None
             if strengthTest > maxStrength or maxStrength == 0:
                 maxStrength = strengthTest
                 bestMove = (new_x,new_y)
@@ -454,6 +462,7 @@ def nextBestMove(game_board, player):
 #determines if game is in checkmate
 def determineCheckmate(player, enemy_player, board):
     #first, find the king piece
+    #print(player.color)
     for piece in player.pieces:
         if piece.rank == "king":
             king = piece
@@ -477,22 +486,23 @@ def determineCheckmate(player, enemy_player, board):
 
     #look if all neighbors are friendly pieces or if a safe spot exists
     #a "safe spot" is a position that is open and not under attack
-    safeTileExists = False
-    friendlyNeighbors = 0
+    safeTiles = len(neighbors)
+    friendlyCount = 0
     for tile in neighbors:
         x,y = tile
         #if position on the board has no piece and not under attack
-        if tile not in possibleEnemyPositions:
-            safeTileExists = True
+        if tile in possibleEnemyPositions:
+            safeTiles -= 1
 
-#        if board[x][y] != None:
+        if board[x][y] != None:
             #if position on board is friendly
-#            if board[x][y].color == king.color:
-#                friendlyNeighbors += 1
-    #if there is a safe spot or all the neighbors are friendly 
-    #if safeTileExists or friendlyNeighbors == len(neighbors):
-    if safeTileExists:
-        #then player has not been checkmated
-        return False
+            if board[x][y].color == king.color:
+                safeTiles -= 1
+                friendlyCount += 1
 
-    return True
+    print(determineCheck(player,enemy_player))
+    if len(king.moveset) == 0 and determineCheck(player,enemy_player):
+        #then player has been checkmated
+        return True
+
+    return False
