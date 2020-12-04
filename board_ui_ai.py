@@ -267,6 +267,9 @@ while True:
 
                 if mouseClicked:
                     reInitMoves(board)
+                    white.calcNextMoves()
+                    black.calcNextMoves()
+
                     if(board[tile_x][tile_y] != None):
                         printPieceInfo(board[tile_x][tile_y])
 

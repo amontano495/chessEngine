@@ -249,9 +249,6 @@ def calcAllPositions(rank, color, position, board, players):
                 board[pos[0]][pos[1]].protected = True
                 invalidPosList.append(pos)
 
-            if board[pos[0]][pos[1]].color != color and board[pos[0]][pos[1]].rank == 'king':
-                invalidPosList.append(pos)
-
             if rank == "king" and board[pos[0]][pos[1]].protected:
                 invalidPosList.append(pos)
 
@@ -324,21 +321,6 @@ def move(piece, target, player):
         print("INVALID MOVE")
         return False
 
-#function to draw board contents to screen
-def drawBoard():
-    print('#'*24)
-    for i in range(8):
-        row = str(8 - i) + "  " + '|'
-        for j in range(8):
-            cell = board[j][i]
-            if cell.rank == "EMPTY":
-                row = row + "  " + '|'
-            else:
-                row = row + cell.player[0] + cell.rank[0] + '|'
-        print(row)
-        print('-'*27)
-    print("   |A |B |C |D |E |F |G |H ")
-
 #initializes the board, adds default pieces
 def initBoard():
     #pawns
@@ -397,10 +379,12 @@ def anToMat(coords):
 
 #gets king from side
 def getKing(side):
-    for i in range(8):
-        for j in range(8):
-            if board[i][j].rank == "kING" and board[i][j].player == side:
-                return board[i][j]
+    king = None
+    for piece in player.pieces:
+        if piece.rank == "king":
+            king = piece
+
+    return king
 
 #determines if a king is in check
 def determineCheck(player, enemy_player):
@@ -409,24 +393,10 @@ def determineCheck(player, enemy_player):
         if piece.rank == "king":
             king = piece
 
-    if king == None or king.board_pos in enemy_player.possibleNextMoves:
+    if king.board_pos in enemy_player.possibleNextMoves:
         return True
 
     return False
-
-#generate all possible next boards from current board
-def moveGen(board, player):
-    nextBoards = []
-    for piece in player.pieces:
-        for move in piece.moveset:
-            possibleBoard = board
-            old_x,old_y = piece.board_pos
-            new_x,new_y = move
-            possibleBoard[old_x][old_y] = None
-            possibleBoard[new_x][new_y] = piece
-            nextBoards.append(possibleBoard)
-
-    return nextBoards
 
 def evalBoard(board, player):
     totalStrength = 0
@@ -443,10 +413,24 @@ def evalBoard(board, player):
 #pick next best move
 def nextBestMove(game_board, player):
     maxStrength = 0
+
+    possibleBoard = []
+    for i in range(8):
+        row = []
+        for j in range(8):
+            row.append(game_board[i][j])
+        possibleBoard.append(row)
+
     for piece in player.pieces:
         for move in piece.moveset:
-            #fix this
-            possibleBoard = game_board.copy()
+            #copy the board
+            possibleBoard = []
+            for i in range(8):
+                row = []
+                for j in range(8):
+                    row.append(game_board[i][j])
+                possibleBoard.append(row)
+
             old_x,old_y = piece.board_pos
             new_x,new_y = move
             possibleBoard[old_x][old_y] = None
@@ -462,45 +446,10 @@ def nextBestMove(game_board, player):
 #determines if game is in checkmate
 def determineCheckmate(player, enemy_player, board):
     #first, find the king piece
-    #print(player.color)
     for piece in player.pieces:
         if piece.rank == "king":
             king = piece
 
-    #we will examine tiles around king
-    surroundingTiles = []
-    position = king.board_pos
-
-    topleft = ( position[0]  - 1, position[1] - 1 )
-    botright = ( position[0]  + 1, position[1] + 1 )
-
-    #tiles under attack by enemy
-    possibleEnemyPositions = enemy_player.possibleNextMoves
-
-    #grab all the neighboring tiles into a list
-    neighbors = []
-    for i in range(topleft[0], botright[0] + 1):
-        for j in range(topleft[1], botright[1] + 1):
-            if not outOfBounds( (i,j) ) and (i,j) != king.board_pos:
-                neighbors.append( (i,j) )
-
-    #look if all neighbors are friendly pieces or if a safe spot exists
-    #a "safe spot" is a position that is open and not under attack
-    safeTiles = len(neighbors)
-    friendlyCount = 0
-    for tile in neighbors:
-        x,y = tile
-        #if position on the board has no piece and not under attack
-        if tile in possibleEnemyPositions:
-            safeTiles -= 1
-
-        if board[x][y] != None:
-            #if position on board is friendly
-            if board[x][y].color == king.color:
-                safeTiles -= 1
-                friendlyCount += 1
-
-    print(determineCheck(player,enemy_player))
     if len(king.moveset) == 0 and determineCheck(player,enemy_player):
         #then player has been checkmated
         return True
