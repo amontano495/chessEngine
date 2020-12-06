@@ -1,3 +1,15 @@
+from chessClasses import Player, Piece
+
+class Tree(object):
+    def __init__(self):
+        self.parent = None
+        self.children = []
+        self.data = None
+        self.val = 0
+        self.depth = 0
+        self.score = 0
+        self.move = None
+
 #determines if tuple is outside of board limits
 def outOfBounds(position):
     if (position[0] >= 0 and position[0] <= 7) and (position[1] >= 0 and position[1] <= 7):
@@ -240,7 +252,8 @@ def calcAllPositions(rank, color, position, board, players):
     #remove any out of bounds positions
     positionsList = list(filter(lambda tup: (tup[0] < 8 and tup[0] >= 0) and (tup[1] < 8 and tup[1] >= 0),positionsList))
 
-    board[position[0]][position[1]].protected = False
+    if board[position[0]][position[1]] != None:
+        board[position[0]][position[1]].protected = False
     invalidPosList = []
     #remove positions with pieces on board of same side
     for pos in positionsList:
@@ -303,24 +316,6 @@ def validMove(piece, target, player):
     else:
         return False
 
-#moves piece to target position on board
-def move(piece, target, player):
-    print(piece.possibleMoves)
-    if validMove(piece, target, player):
-        #replace previous position with empty
-        board[piece.position[0]][piece.position[1]] = Piece("EMPTY","NONE",piece.position,[])
-
-        #update piece position
-        piece.position = target
-
-        #update board position at target to piece
-        board[target[0]][target[1]] = piece
-        print(player + " MOVES " + piece.rank + " TO " + str(target))
-        return True
-    else:
-        print("INVALID MOVE")
-        return False
-
 #initializes the board, adds default pieces
 def initBoard():
     #pawns
@@ -378,7 +373,7 @@ def anToMat(coords):
     return (xcoord,ycoord)
 
 #gets king from side
-def getKing(side):
+def getKing(player):
     king = None
     for piece in player.pieces:
         if piece.rank == "king":
@@ -393,65 +388,136 @@ def determineCheck(player, enemy_player):
         if piece.rank == "king":
             king = piece
 
-    if king.board_pos in enemy_player.possibleNextMoves:
-        return True
+    if king != None:
+        if king.board_pos in enemy_player.possibleNextMoves:
+            return True
 
     return False
 
-def evalBoard(board, player):
+def trackPieces(board, white, black):
+    white.pieces = []
+    black.pieces = []
+    for i in range(8):
+        for j in range(8):
+            if board[i][j] != None:
+                if board[i][j].color == "white":
+                    white.pieces.append(board[i][j])
+                else:
+                    black.pieces.append(board[i][j])
+
+def evalBoard(board):
     totalStrength = 0
     for i in range(len(board)):
         for j in range(len(board)):
             if board[i][j] != None:
-                if board[i][j].color == player.color:
-                    totalStrength += board[i][j].strength
-                else:
-                    totalStrength -= board[i][j].strength
+                totalStrength += board[i][j].strength
 
     return totalStrength
 
-#pick next best move
-def nextBestMove(game_board, player):
-    maxStrength = 0
-
-    possibleBoard = []
+def copyBoard(board):
+    board_copy = []
     for i in range(8):
         row = []
         for j in range(8):
-            row.append(game_board[i][j])
-        possibleBoard.append(row)
+            row.append(board[i][j])
+        board_copy.append(row)
 
-    for piece in player.pieces:
-        for move in piece.moveset:
-            #copy the board
-            possibleBoard = []
-            for i in range(8):
-                row = []
-                for j in range(8):
-                    row.append(game_board[i][j])
-                possibleBoard.append(row)
+    return board_copy
 
-            old_x,old_y = piece.board_pos
-            new_x,new_y = move
-            possibleBoard[old_x][old_y] = None
-            possibleBoard[new_x][new_y] = piece
-            strengthTest = evalBoard(possibleBoard, player)
-            if strengthTest > maxStrength or maxStrength == 0:
-                maxStrength = strengthTest
-                bestMove = (new_x,new_y)
-                bestPiece = (old_x,old_y)
+def minimax(node, depth, maximizingPlayer):
+    if depth == 0 or node.children == []:
+        return node.score
+    if maximizingPlayer:
+        value = float('-inf')
+        for child in node.children:
+            value = max(value,minimax(child,depth-1,False))
+        return value
+    else:
+        value = float('inf')
+        for child in node.children:
+            value = min(value,minimax(child,depth-1,True))
+        return value
 
-    return (bestPiece,bestMove)
+def buildBoardLeaf(player, enemy_player, node, piece, move):
+        if determineCheck(player,enemy_player):
+            piece = getKing(player)
+
+        old_x,old_y = piece.board_pos
+        new_x,new_y = move
+
+        possibleBoard = copyBoard(node.parent.data)
+
+        possibleBoard[old_x][old_y] = None
+        possibleBoard[new_x][new_y] = piece
+        possibleBoard[new_x][new_y].board_pos = move
+
+        node.data = copyBoard(possibleBoard)
+        node.score = evalBoard(node.data)
+
+        old = old_x,old_y
+        node.move = (old,move)
+
+def buildTree(node, player, enemy_player, depth):
+    trackPieces(node.data, player, enemy_player)
+
+    if depth > 0:
+        if depth % 2 != 0:
+            for piece in player.pieces:
+                for move in piece.moveset:
+                    piece_copy = Piece(piece.rank, piece.color, piece.pixel_pos, piece.board_pos)
+                    piece_copy.strength = piece.strength
+                    piece_copy.protected = piece.protected
+                    piece_copy.moveset = piece.moveset
+
+                    new_child = Tree()
+                    new_child.parent = node
+                    node.children.append(new_child)
+                    buildBoardLeaf(player, enemy_player, new_child, piece_copy, move)
+
+                    buildTree(new_child, enemy_player, player, depth - 1)
+        else:
+            for piece in enemy_player.pieces:
+                for move in piece.moveset:
+                    piece_copy = Piece(piece.rank, piece.color, piece.pixel_pos, piece.board_pos)
+                    piece_copy.strength = piece.strength
+                    piece_copy.protected = piece.protected
+                    piece_copy.moveset = piece.moveset
+
+                    new_child = Tree()
+                    new_child.parent = node
+                    node.children.append(new_child)
+                    buildBoardLeaf(enemy_player, player, new_child, piece_copy, move)
+
+                    buildTree(new_child, player, enemy_player, depth - 1)
+
+#pick next best move
+def nextBestMove(game_board, player, enemy_player, depth):
+    player_1 = Player(player.pieces, player.possibleNextMoves, player.color)
+    player_2 = Player(enemy_player.pieces, enemy_player.possibleNextMoves, enemy_player.color)
+
+    root = Tree()
+    root.data = copyBoard(game_board)
+    buildTree(root, player_1, player_2, depth)
+    maxScore = 0
+    bestMove = None
+    for child in root.children:
+        testScore = minimax(child,depth,True)
+        if testScore > maxScore or maxScore == 0:
+            maxScore = testScore
+            bestMove = child.move
+
+    return bestMove
 
 #determines if game is in checkmate
 def determineCheckmate(player, enemy_player, board):
     #first, find the king piece
+    king = None
     for piece in player.pieces:
         if piece.rank == "king":
             king = piece
-
-    if len(king.moveset) == 0 and determineCheck(player,enemy_player):
-        #then player has been checkmated
-        return True
+    if king != None:
+        if len(king.moveset) == 0 and determineCheck(player,enemy_player):
+            #then player has been checkmated
+            return True
 
     return False

@@ -1,6 +1,7 @@
 import random, pygame, sys
 from pygame.locals import *
-from chessEngine import calcAllPositions, enemySide, determineCheck, determineCheckmate, getStrength, nextBestMove
+from chessClasses import Player, Piece
+from chessEngine import determineCheckmate, enemySide, nextBestMove, calcAllPositions, determineCheck, getStrength
 
 FPS = 30
 WINDOWWIDTH = 640
@@ -36,52 +37,18 @@ def getTileAtPixel(x,y):
                 return (boxx, boxy)
     return (None, None)
 
-#Player class containing data on pieces, color, state
-class Player:
-    def __init__(self, pieces, moves, color):
-        self.pieces = pieces
-        self.possibleNextMoves = moves
-        self.color = color
-        self.inCheck = False
+def pieceImgLoader(color,rank):
+    return pygame.transform.scale(pygame.image.load('img/' + color + '_' + rank + '.png'), (PIECE_SIZE,PIECE_SIZE))
 
-    #calculate next possible moves for player
-    def calcNextMoves(self):
-        moveList = []
-        for piece in self.pieces:
-            for move in piece.moveset:
-                moveList.append(move)
-        
-        self.possibleNextMoves = moveList
+def move(board,piece,target):
+    old_x,old_y = piece.board_pos
+    x,y = target
 
-    #sets player status wrt check or not in check
-    def checkStatus(self, enemy):
-        self.inCheck = determineCheck(self, enemy)
+    board[x][y] = piece
+    board[x][y].board_pos = target
+    board[x][y].pixel_pos = coordToPixels(x,y)
 
-
-#Piece class containing data on spot, color, type
-class Piece:
-    def __init__(self, rank, color, pixel_pos, board_pos, moveset=None):
-        self.color = color
-        self.rank = rank
-        self.strength = getStrength(self.rank)
-        self.protected = False
-        self.img = pygame.image.load('img/' + color + '_' + rank + '.png')
-        self.img = pygame.transform.scale(self.img, (PIECE_SIZE,PIECE_SIZE))
-        self.pixel_pos = pixel_pos
-        self.board_pos = board_pos
-        self.moveset = moveset
-    
-    #draws piece sprite to screen
-    def draw(self, displaySurf):
-        displaySurf.blit(self.img, self.pixel_pos)
-   
-    #calculates possible moves for piece
-    def setMoves(self, board, players):
-        self.moveset = calcAllPositions(self.rank, 
-                                        self.color, 
-                                        self.board_pos, 
-                                        board, 
-                                        players)
+    board[old_x][old_y] = None
 
 #sets up the board with pieces from each side
 def initBoard(board, displaySurf):
@@ -101,7 +68,15 @@ def initBoard(board, displaySurf):
     for side,i in zip(["black","white"], [0,7]):
         board[4][i] = Piece("king",side, coordToPixels(4,i), (4,i))
         board[3][i] = Piece("queen",side, coordToPixels(3,i), (3,i))
-        
+
+    for i in range(8):
+        for j in range(8):
+            if board[i][j] != None:
+                if board[i][j].color == "white":
+                    board[i][j].strength = getStrength(board[i][j].rank)
+                else:
+                    board[i][j].strength = -1 * getStrength(board[i][j].rank)
+
     return board
 
 #draw possible moves to screen
@@ -118,7 +93,7 @@ def reInitMoves(board):
     for i in range(BOARDWIDTH):
         for j in range(BOARDHEIGHT):
             if board[i][j] != None:
-                board[i][j].setMoves(board, players)
+                board[i][j].setMoves(calcAllPositions, board, players)
 
 #draws the board and piece sprites
 def drawBoard(board, displaySurf):
@@ -127,8 +102,9 @@ def drawBoard(board, displaySurf):
     for i in range(BOARDWIDTH):
         for j in range(BOARDHEIGHT):
             if board[i][j] != None:
+                board[i][j].img = pieceImgLoader(board[i][j].color,board[i][j].rank)
                 board[i][j].draw(displaySurf)
-                board[i][j].setMoves(board, players)
+                board[i][j].setMoves(calcAllPositions, board, players)
 
 #draw piece at mouse position for "holding" effect
 def drawPiece(piece, mousePos, displaySurf):
@@ -151,6 +127,28 @@ def printPieceInfo(piece):
     print("rank: " + piece.rank)
     print("color: " + piece.color)
     print("protected?: " + str(piece.protected))
+
+def updateGame(board,black,white):
+    #recalc all the moves
+    reInitMoves(board)
+    
+    white.calcNextMoves()
+    black.calcNextMoves()
+
+    #determine check and checkmate status
+    white.checkStatus(determineCheck, black)
+    black.checkStatus(determineCheck, white)
+
+    if determineCheckmate(black,white,board):
+        DISPLAYSURF.blit(checkmateTextImg, (0,0))
+        print("BLACK HAS BEEN CHECKMATED")
+    if determineCheckmate(white,black,board):
+        DISPLAYSURF.blit(checkmateTextImg, (0,0))
+        print("WHITE HAS BEEN CHECKMATED")
+    if white.inCheck:
+        print("WHITE IS IN CHECK")
+    if black.inCheck:
+        print("BLACK IS IN CHECK")
 
 #setup pygame library
 pygame.init()
@@ -195,6 +193,7 @@ gameOver = False
 
 #game loop starts
 while True:
+    gameOver = determineCheckmate(black,white,board) or determineCheckmate(white,black,board) 
     if gameOver:
         DISPLAYSURF.blit(checkmateTextImg,checkmateTextRect)
     else:
@@ -202,42 +201,14 @@ while True:
 
         if player == "black":
 
-            (old,new) = nextBestMove(board,black)
+            (old,new) = nextBestMove(board,black,white,2)
             old_x,old_y = old
-            new_x,new_y = new
-            print(old)
 
-            blackPiece = board[old_x][old_y]
-
-            board[new_x][new_y] = blackPiece
-            board[new_x][new_y].board_pos = (new_x,new_y)
-            board[new_x][new_y].pixel_pos = coordToPixels(new_x,new_y)
-
-            board[old_x][old_y] = None
+            move(board,board[old_x][old_y],new)
 
             pygame.mixer.Sound.play(putdown_sound)
-            reInitMoves(board)
+            updateGame(board,black,white)
             
-            white.calcNextMoves()
-            black.calcNextMoves()
-
-            #determine check and checkmate status
-            white.checkStatus(black)
-            black.checkStatus(white)
-
-            if determineCheckmate(black,white,board):
-                DISPLAYSURF.blit(checkmateTextImg, (0,0))
-                print("BLACK HAS BEEN CHECKMATED")
-                gameOver = True
-            if determineCheckmate(white,black,board):
-                DISPLAYSURF.blit(checkmateTextImg, (0,0))
-                print("WHITE HAS BEEN CHECKMATED")
-                gameOver = True
-            
-            if white.inCheck:
-                print("WHITE IS IN CHECK")
-            if black.inCheck:
-                print("BLACK IS IN CHECK")
             player = "white"
             drawBoard(board, DISPLAYSURF)
             trackPieces(board,white,black)
@@ -273,19 +244,14 @@ while True:
                     if(board[tile_x][tile_y] != None):
                         printPieceInfo(board[tile_x][tile_y])
 
-                    #if a piece is not being held and player clicked on a piece that belongs to them
-                    if pieceBeingHeld == False and board[tile_x][tile_y] != None and board[tile_x][tile_y].color == player and not white.inCheck:
-                        #piece is now picked up
-                        controlledPiece = board[tile_x][tile_y]
-                        board[tile_x][tile_y] = None
-                        pieceBeingHeld = True
-                        pygame.mixer.Sound.play(pickup_sound)
-                       
-                    elif pieceBeingHeld == False and board[tile_x][tile_y] != None and board[tile_x][tile_y].color == player and board[tile_x][tile_y].rank == 'king' and white.inCheck:
-                        #piece is now picked up
-                        controlledPiece = board[tile_x][tile_y]
-                        board[tile_x][tile_y] = None
-                        pieceBeingHeld = True
+                    if pieceBeingHeld == False and board[tile_x][tile_y] != None:
+                        if board[tile_x][tile_y].color == player:
+                            if not white.inCheck or white.inCheck and board[tile_x][tile_y].rank == 'king':
+                                #piece is now picked up
+                                controlledPiece = board[tile_x][tile_y]
+                                board[tile_x][tile_y] = None
+                                pieceBeingHeld = True
+
                         pygame.mixer.Sound.play(pickup_sound)
 
                     #if a piece is held and player clicked on a valid board spot
@@ -297,39 +263,13 @@ while True:
                         board[tile_x][tile_y].pixel_pos = coordToPixels(tile_x,tile_y)
                         pieceBeingHeld = False
 
-                        #recalc all the moves
-                        reInitMoves(board)
-                        
-                        white.calcNextMoves()
-                        black.calcNextMoves()
-
-                        #determine check and checkmate status
-                        white.checkStatus(black)
-                        black.checkStatus(white)
-
-                        if determineCheckmate(black,white,board):
-                            DISPLAYSURF.blit(checkmateTextImg, (0,0))
-                            print("BLACK HAS BEEN CHECKMATED")
-                            gameOver = True
-                        if determineCheckmate(white,black,board):
-                            DISPLAYSURF.blit(checkmateTextImg, (0,0))
-                            print("WHITE HAS BEEN CHECKMATED")
-                            gameOver = True
-                        
-                        if white.inCheck:
-                            print("WHITE IS IN CHECK")
-                        if black.inCheck:
-                            print("BLACK IS IN CHECK")
+                        updateGame(board,black,white)
 
                         #flip player
                         player = enemySide(player)
                         print("it is now " + player + "'s turn")
                         pygame.mouse.set_visible(True)
 
-                    #if a piece is held and player tries to click on invalid spot
-                    elif pieceBeingHeld and (tile_x,tile_y) not in controlledPiece.moveset and (tile_x,tile_y) != controlledPiece.board_pos:
-                        print("Invalid move")
-                   
                     #if piece is held and player clicks on original spot
                     elif pieceBeingHeld and (tile_x,tile_y) == controlledPiece.board_pos:
                         #place piece back at original position
