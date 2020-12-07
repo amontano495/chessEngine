@@ -458,9 +458,12 @@ def buildBoardLeaf(player, enemy_player, node, piece, move):
         node.move = (old,move)
 
 def buildTree(node, player, enemy_player, depth):
-    trackPieces(node.data, player, enemy_player)
+    if player.color == "white":
+        trackPieces(node.data, player, enemy_player)
+    else:
+        trackPieces(node.data, enemy_player, player)
 
-    if depth > 0:
+    if depth >= 0:
         if depth % 2 != 0:
             for piece in player.pieces:
                 for move in piece.moveset:
@@ -490,6 +493,8 @@ def buildTree(node, player, enemy_player, depth):
 
                     buildTree(new_child, player, enemy_player, depth - 1)
 
+
+
 #pick next best move
 def nextBestMove(game_board, player, enemy_player, depth):
     player_1 = Player(player.pieces, player.possibleNextMoves, player.color)
@@ -498,13 +503,15 @@ def nextBestMove(game_board, player, enemy_player, depth):
     root = Tree()
     root.data = copyBoard(game_board)
     buildTree(root, player_1, player_2, depth)
-    maxScore = 0
+
+    maxScore = float('-inf')
     bestMove = None
     for child in root.children:
         testScore = minimax(child,depth,True)
-        if testScore > maxScore or maxScore == 0:
+        if testScore > maxScore:
             maxScore = testScore
             bestMove = child.move
+
 
     return bestMove
 
