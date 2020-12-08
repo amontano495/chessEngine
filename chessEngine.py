@@ -9,6 +9,7 @@ class Tree(object):
         self.depth = 0
         self.score = 0
         self.move = None
+        self.color = None
 
 #determines if tuple is outside of board limits
 def outOfBounds(position):
@@ -394,16 +395,16 @@ def determineCheck(player, enemy_player):
 
     return False
 
-def trackPieces(board, white, black):
-    white.pieces = []
-    black.pieces = []
+def trackPieces(board, player_1, player_2):
+    player_1.pieces = []
+    player_2.pieces = []
     for i in range(8):
         for j in range(8):
             if board[i][j] != None:
-                if board[i][j].color == "white":
-                    white.pieces.append(board[i][j])
+                if board[i][j].color == player_1.color:
+                    player_1.pieces.append(board[i][j])
                 else:
-                    black.pieces.append(board[i][j])
+                    player_2.pieces.append(board[i][j])
 
 def evalBoard(board):
     totalStrength = 0
@@ -424,94 +425,111 @@ def copyBoard(board):
 
     return board_copy
 
-def minimax(node, depth, maximizingPlayer):
-    if depth == 0 or node.children == []:
-        return node.score
-    if maximizingPlayer:
-        value = float('-inf')
-        for child in node.children:
-            value = max(value,minimax(child,depth-1,False))
-        return value
-    else:
-        value = float('inf')
-        for child in node.children:
-            value = min(value,minimax(child,depth-1,True))
-        return value
 
-def buildBoardLeaf(player, enemy_player, node, piece, move):
-        if determineCheck(player,enemy_player):
-            piece = getKing(player)
+def buildBoardLeaf(node, piece, move):
+    old_x,old_y = piece.board_pos
+    new_x,new_y = move
 
-        old_x,old_y = piece.board_pos
-        new_x,new_y = move
+    possibleBoard = copyBoard(node.parent.data)
 
-        possibleBoard = copyBoard(node.parent.data)
+    possibleBoard[old_x][old_y] = None
+    possibleBoard[new_x][new_y] = piece
+    possibleBoard[new_x][new_y].board_pos = move
 
-        possibleBoard[old_x][old_y] = None
-        possibleBoard[new_x][new_y] = piece
-        possibleBoard[new_x][new_y].board_pos = move
+    node.data = copyBoard(possibleBoard)
+    node.score = evalBoard(node.data)
 
-        node.data = copyBoard(possibleBoard)
-        node.score = evalBoard(node.data)
-
-        old = old_x,old_y
-        node.move = (old,move)
+    old = old_x,old_y
+    node.move = (old,move)
 
 def buildTree(node, player, enemy_player, depth):
-    if player.color == "white":
-        trackPieces(node.data, player, enemy_player)
-    else:
-        trackPieces(node.data, enemy_player, player)
-
     if depth >= 0:
-        if depth % 2 != 0:
-            for piece in player.pieces:
-                for move in piece.moveset:
-                    piece_copy = Piece(piece.rank, piece.color, piece.pixel_pos, piece.board_pos)
-                    piece_copy.strength = piece.strength
-                    piece_copy.protected = piece.protected
-                    piece_copy.moveset = piece.moveset
+        player = Player(player.pieces, player.possibleNextMoves, player.color)
+        enemy_player = Player(enemy_player.pieces, enemy_player.possibleNextMoves, enemy_player.color)
+        trackPieces(node.data, player, enemy_player)
 
-                    new_child = Tree()
-                    new_child.parent = node
-                    node.children.append(new_child)
-                    buildBoardLeaf(player, enemy_player, new_child, piece_copy, move)
+        pieces = player.pieces
+        if determineCheck(player, enemy_player):
+            pieces = []
+            pieces.append(getKing(player))
 
-                    buildTree(new_child, enemy_player, player, depth - 1)
-        else:
-            for piece in enemy_player.pieces:
-                for move in piece.moveset:
-                    piece_copy = Piece(piece.rank, piece.color, piece.pixel_pos, piece.board_pos)
-                    piece_copy.strength = piece.strength
-                    piece_copy.protected = piece.protected
-                    piece_copy.moveset = piece.moveset
+        for piece in pieces:
+            for move in piece.moveset:
+                piece_copy = Piece(piece.rank, piece.color, piece.pixel_pos, piece.board_pos)
+                piece_copy.strength = piece.strength
+                piece_copy.protected = piece.protected
+                piece_copy.moveset = piece.moveset
 
-                    new_child = Tree()
-                    new_child.parent = node
-                    node.children.append(new_child)
-                    buildBoardLeaf(enemy_player, player, new_child, piece_copy, move)
+                new_child = Tree()
+                new_child.parent = node
+                new_child.color = enemySide(node.color)
+                new_child.depth = depth
+                node.children.append(new_child)
 
-                    buildTree(new_child, player, enemy_player, depth - 1)
+                buildBoardLeaf(new_child, piece_copy, move)
+                buildTree(new_child, enemy_player, player, depth - 1)
 
+def minimax(depth, board, maximizingPlayer, players):
+    trackPieces(board, players[0], players[1])
+    if depth == 0:
+        return -1 * evalBoard(board)
+    if maximizingPlayer:
+        player = players[0]
+        bestMove = float('-inf')
+        for piece in player.pieces:
+            old = piece.board_pos
+            for move in piece.moveset:
+                testMove = (old, move)
+                testBoard = newBoard(testMove, board)
+                bestMove = max(bestMove, minimax(depth - 1, board, not maximizingPlayer, players))
 
+        return bestMove
+    else:
+        player = players[1]
+        bestMove = float('inf')
+        for piece in player.pieces:
+            old = piece.board_pos
+            for move in piece.moveset:
+                testMove = (old, move)
+                testBoard = newBoard(testMove, board)
+                bestMove = min(bestMove, minimax(depth - 1, board, not maximizingPlayer, players))
+
+        return bestMove
+
+def newBoard(move, board):
+    old_x,old_y = move[0]
+    new_x,new_y = move[1]
+
+    newBoard = copyBoard(board)
+    temp = newBoard[old_x][old_y]
+    temp.board_pos = (new_x,new_y)
+    newBoard[new_x][new_y] = temp
+    newBoard[old_x][old_y] = None
+
+    return newBoard
+
+def findBest(depth, board, isMaximizingPlayer, players):
+    moves = []
+    player = players[0]
+    bestScore = float('-inf')
+    for piece in player.pieces:
+        old = piece.board_pos
+        for move in piece.moveset:
+            testMove = (old,move)
+            testBoard = newBoard(testMove, board)
+            val = minimax(depth - 1, testBoard, not isMaximizingPlayer, players)
+            if val >= bestScore:
+                bestScore = val
+                bestMove = testMove
+
+    return bestMove
 
 #pick next best move
 def nextBestMove(game_board, player, enemy_player, depth):
     player_1 = Player(player.pieces, player.possibleNextMoves, player.color)
     player_2 = Player(enemy_player.pieces, enemy_player.possibleNextMoves, enemy_player.color)
 
-    root = Tree()
-    root.data = copyBoard(game_board)
-    buildTree(root, player_1, player_2, depth)
-
-    maxScore = float('-inf')
-    bestMove = None
-    for child in root.children:
-        testScore = minimax(child,depth,True)
-        if testScore > maxScore:
-            maxScore = testScore
-            bestMove = child.move
-
+    bestMove = findBest(depth, game_board, True, [player_1,player_2])
 
     return bestMove
 
