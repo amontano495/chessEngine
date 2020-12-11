@@ -203,9 +203,9 @@ def kingPositions(rank, color, position, board, players):
 
     #king cannot move into tiles under attack by enemy
     if color == "white":
-        possibleEnemyPositions = players[1].possibleNextMoves
+        possibleEnemyPositions = players[1].targets
     else:
-        possibleEnemyPositions = players[0].possibleNextMoves
+        possibleEnemyPositions = players[0].targets
 
     #king can move around in a 3x3 square
     #start by setting top left and bottom right squares
@@ -469,30 +469,41 @@ def buildTree(node, player, enemy_player, depth):
                 buildBoardLeaf(new_child, piece_copy, move)
                 buildTree(new_child, enemy_player, player, depth - 1)
 
+def copyMoves(moves):
+    newMoves = []
+    for move in moves:
+        newMoves.append(move)
+
+    return newMoves
+
 def minimax(depth, board, maximizingPlayer, players):
-    trackPieces(board, players[0], players[1])
+   # player_1 = Player(players[0].pieces, players[0].possibleNextMoves, players[0].color)
+   # player_2 = Player(players[1].pieces, players[1].possibleNextMoves, players[1].color)
+    player_1 = players[0]
+    player_2 = players[1]
+
+    trackPieces(board, player_1, player_2)
+    player_1.calcNextMoves()
+    player_2.calcNextMoves()
+
     if depth == 0:
         return -1 * evalBoard(board)
+
     if maximizingPlayer:
-        player = players[0]
         bestMove = float('-inf')
-        for piece in player.pieces:
-            old = piece.board_pos
-            for move in piece.moveset:
-                testMove = (old, move)
-                testBoard = newBoard(testMove, board)
-                bestMove = max(bestMove, minimax(depth - 1, board, not maximizingPlayer, players))
+        moves = copyMoves(player_1.possibleNextMoves)
+        for move in moves:
+            testBoard = newBoard(move, board)
+            bestMove = max(bestMove, minimax(depth - 1, testBoard, not maximizingPlayer, [player_1,player_2]))
 
         return bestMove
+
     else:
-        player = players[1]
         bestMove = float('inf')
-        for piece in player.pieces:
-            old = piece.board_pos
-            for move in piece.moveset:
-                testMove = (old, move)
-                testBoard = newBoard(testMove, board)
-                bestMove = min(bestMove, minimax(depth - 1, board, not maximizingPlayer, players))
+        moves = copyMoves(player_2.possibleNextMoves)
+        for move in moves:
+            testBoard = newBoard(move, board)
+            bestMove = min(bestMove, minimax(depth - 1, testBoard, not maximizingPlayer, [player_1,player_2]))
 
         return bestMove
 
@@ -502,6 +513,8 @@ def newBoard(move, board):
 
     newBoard = copyBoard(board)
     temp = newBoard[old_x][old_y]
+    if temp == None:
+        print(move)
     temp.board_pos = (new_x,new_y)
     newBoard[new_x][new_y] = temp
     newBoard[old_x][old_y] = None

@@ -132,8 +132,8 @@ def updateGame(board,black,white):
     #recalc all the moves
     reInitMoves(board)
     
-    white.calcNextMoves()
-    black.calcNextMoves()
+    white.calcNextTargets()
+    black.calcNextTargets()
 
     #determine check and checkmate status
     white.checkStatus(determineCheck, black)
@@ -167,8 +167,8 @@ checkmateTextRect.center = ( WINDOWWIDTH // 2 , WINDOWWIDTH // 2 )
 white = Player([], [], "white")
 black = Player([], [], "black")
 players = [white, black]
-white.calcNextMoves()
-black.calcNextMoves()
+white.calcNextTargets()
+black.calcNextTargets()
 
 #set up board matrix
 board = []
@@ -238,8 +238,8 @@ while True:
 
                 if mouseClicked:
                     reInitMoves(board)
-                    white.calcNextMoves()
-                    black.calcNextMoves()
+                    white.calcNextTargets()
+                    black.calcNextTargets()
 
                     if(board[tile_x][tile_y] != None):
                         printPieceInfo(board[tile_x][tile_y])

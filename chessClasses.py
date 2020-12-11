@@ -2,17 +2,28 @@
 class Player:
     def __init__(self, pieces, moves, color):
         self.pieces = pieces
-        self.possibleNextMoves = moves
+        self.targets = moves
         self.color = color
+        self.possibleNextMoves = None
         self.inCheck = False
 
     #calculate next possible moves for player
+    def calcNextTargets(self):
+        targetList = []
+        for piece in self.pieces:
+            for move in piece.moveset:
+                targetList.append(move)
+        
+        self.targets = targetList 
+
     def calcNextMoves(self):
         moveList = []
         for piece in self.pieces:
+            src = piece.board_pos
             for move in piece.moveset:
-                moveList.append(move)
-        
+                dest = move
+                moveList.append((src,dest))
+
         self.possibleNextMoves = moveList
 
     #sets player status wrt check or not in check
