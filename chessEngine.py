@@ -32,10 +32,11 @@ def pawnPositions(color, position, board):
     direction = 1 if color == "black" else -1
 
     #if there is no enemy directly in front
-    if board[position[0]][position[1] + direction] == None:
-        #pawn is able to move forward
-        moveForward = (position[0], position[1] + direction)
-        positionsList.append(moveForward)
+    if position[0] < 8 and position[1] + direction < 8:
+        if board[position[0]][position[1] + direction] == None:
+            #pawn is able to move forward
+            moveForward = (position[0], position[1] + direction)
+            positionsList.append(moveForward)
 
     #pawn can move diagonally if enemy present
     diagLeft = (position[0] - 1, position[1] + direction)
@@ -390,7 +391,7 @@ def determineCheck(player, enemy_player):
             king = piece
 
     if king != None:
-        if king.board_pos in enemy_player.possibleNextMoves:
+        if king.board_pos in enemy_player.targets:
             return True
 
     return False
@@ -414,16 +415,6 @@ def evalBoard(board):
                 totalStrength += board[i][j].strength
 
     return totalStrength
-
-def copyBoard(board):
-    board_copy = []
-    for i in range(8):
-        row = []
-        for j in range(8):
-            row.append(board[i][j])
-        board_copy.append(row)
-
-    return board_copy
 
 
 def buildBoardLeaf(node, piece, move):
@@ -469,71 +460,91 @@ def buildTree(node, player, enemy_player, depth):
                 buildBoardLeaf(new_child, piece_copy, move)
                 buildTree(new_child, enemy_player, player, depth - 1)
 
+def copyBoard(board):
+    board_copy = []
+    for i in range(8):
+        row = []
+        for j in range(8):
+            row.append(board[i][j])
+        board_copy.append(row)
+
+    return board_copy
+
 def copyMoves(moves):
     newMoves = []
-    for move in moves:
-        newMoves.append(move)
+    if moves != None:
+        for move in moves:
+            newMoves.append(move)
 
     return newMoves
-
-def minimax(depth, board, maximizingPlayer, players):
-   # player_1 = Player(players[0].pieces, players[0].possibleNextMoves, players[0].color)
-   # player_2 = Player(players[1].pieces, players[1].possibleNextMoves, players[1].color)
-    player_1 = players[0]
-    player_2 = players[1]
-
-    trackPieces(board, player_1, player_2)
-    player_1.calcNextMoves()
-    player_2.calcNextMoves()
-
-    if depth == 0:
-        return -1 * evalBoard(board)
-
-    if maximizingPlayer:
-        bestMove = float('-inf')
-        moves = copyMoves(player_1.possibleNextMoves)
-        for move in moves:
-            testBoard = newBoard(move, board)
-            bestMove = max(bestMove, minimax(depth - 1, testBoard, not maximizingPlayer, [player_1,player_2]))
-
-        return bestMove
-
-    else:
-        bestMove = float('inf')
-        moves = copyMoves(player_2.possibleNextMoves)
-        for move in moves:
-            testBoard = newBoard(move, board)
-            bestMove = min(bestMove, minimax(depth - 1, testBoard, not maximizingPlayer, [player_1,player_2]))
-
-        return bestMove
 
 def newBoard(move, board):
     old_x,old_y = move[0]
     new_x,new_y = move[1]
 
+    newBoard = []
     newBoard = copyBoard(board)
+
     temp = newBoard[old_x][old_y]
     if temp == None:
         print(move)
-    temp.board_pos = (new_x,new_y)
-    newBoard[new_x][new_y] = temp
+
+    pieceCopy = Piece(temp.rank,temp.color,temp.pixel_pos, temp.board_pos,temp.moveset)
+    newBoard[new_x][new_y] = pieceCopy
     newBoard[old_x][old_y] = None
 
     return newBoard
 
+def minimax(depth, board, maximizingPlayer, players):
+    if depth == 0:
+        return -1 * evalBoard(board)
+
+    if maximizingPlayer:
+        bestMove = float('-inf')
+        moves = copyMoves(players[0].possibleNextMoves)
+        for move in moves:
+            player_1 = Player([], [], players[0].color)
+            player_2 = Player([], [], players[1].color)
+            if board[move[0][0]][move[0][1]] != None:
+                testBoard = newBoard(move, board)
+                trackPieces(testBoard, player_1, player_2)
+                player_1.calcNextMoves()
+                player_2.calcNextMoves()
+                bestMove = max(bestMove, minimax(depth - 1, testBoard, not maximizingPlayer, [player_1,player_2]))
+
+        return bestMove
+
+    else:
+        bestMove = float('inf')
+        moves = copyMoves(players[1].possibleNextMoves)
+        for move in moves:
+            player_1 = Player([], [], players[0].color)
+            player_2 = Player([], [], players[1].color)
+            testBoard = newBoard(move, board)
+            trackPieces(testBoard, player_1, player_2)
+            player_1.calcNextMoves()
+            player_2.calcNextMoves()
+            bestMove = min(bestMove, minimax(depth - 1, testBoard, not maximizingPlayer, [player_1,player_2]))
+
+        return bestMove
+
+
 def findBest(depth, board, isMaximizingPlayer, players):
-    moves = []
-    player = players[0]
+    player = Player(players[0].pieces, players[0].targets, players[0].color)
+    player.calcNextMoves()
     bestScore = float('-inf')
-    for piece in player.pieces:
-        old = piece.board_pos
-        for move in piece.moveset:
-            testMove = (old,move)
-            testBoard = newBoard(testMove, board)
-            val = minimax(depth - 1, testBoard, not isMaximizingPlayer, players)
-            if val >= bestScore:
-                bestScore = val
-                bestMove = testMove
+    moves = copyMoves(player.possibleNextMoves)
+    for move in moves:
+        testBoard = newBoard(move, board)
+        player_1 = Player([], [], players[0].color)
+        player_2 = Player([], [], players[1].color)
+        trackPieces(testBoard, player_1, player_2)
+        player_1.calcNextMoves()
+        player_2.calcNextMoves()
+        val = minimax(depth - 1, testBoard, not isMaximizingPlayer, [player_1,player_2])
+        if val >= bestScore:
+            bestScore = val
+            bestMove = move
 
     return bestMove
 

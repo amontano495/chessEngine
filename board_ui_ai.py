@@ -201,7 +201,7 @@ while True:
 
         if player == "black":
 
-            (old,new) = nextBestMove(board,black,white,2)
+            (old,new) = nextBestMove(board,black,white,3)
             old_x,old_y = old
 
             move(board,board[old_x][old_y],new)
